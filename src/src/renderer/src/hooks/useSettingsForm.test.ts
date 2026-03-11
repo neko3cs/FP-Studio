@@ -7,7 +7,7 @@ describe('useSettingsForm', () => {
   it('入力値を更新できる', () => {
     const { result } = renderHook(() => useSettingsForm(1))
 
-    expect(result.current.defaultProductivity).toBe('1')
+    expect(result.current.defaultProductivity).toBe('1.00')
     expect(result.current.canSubmit).toBe(true)
 
     act(() => {
@@ -31,7 +31,7 @@ describe('useSettingsForm', () => {
       result.current.reset(2)
     })
 
-    expect(result.current.defaultProductivity).toBe('2')
+    expect(result.current.defaultProductivity).toBe('2.00')
     expect(result.current.canSubmit).toBe(true)
   })
 })
