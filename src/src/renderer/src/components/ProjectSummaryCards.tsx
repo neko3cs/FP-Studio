@@ -24,12 +24,12 @@ export function ProjectSummaryCards({ project }: ProjectSummaryCardsProps): Reac
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-3 md:grid-cols-3">
       {cards.map((card) => (
-        <section key={card.label} className="studio-panel px-5 py-4">
-          <p className="studio-text-tertiary text-sm font-medium">{card.label}</p>
+        <section key={card.label} className="studio-panel px-4 py-3">
+          <p className="studio-text-tertiary text-xs font-medium">{card.label}</p>
           <p
-            className="studio-text-primary mt-2 text-[30px] font-semibold tracking-tight"
+            className="studio-text-primary mt-1 text-2xl font-semibold leading-none tracking-tight"
             data-testid={`summary-${card.id}`}
           >
             {card.value}

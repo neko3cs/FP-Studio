@@ -24,8 +24,8 @@ export function ProjectSidebar({
   onDeleteProject
 }: ProjectSidebarProps): React.JSX.Element {
   return (
-    <aside className="studio-panel flex h-full flex-col gap-5 p-5">
-      <div className="studio-panel-muted space-y-3 p-4">
+    <aside className="studio-panel flex h-full min-h-0 flex-col gap-4 p-4">
+      <div className="studio-panel-muted space-y-3 p-3.5">
         <label className="block space-y-2">
           <span className="studio-input-label">プロジェクト名</span>
           <input
@@ -44,7 +44,7 @@ export function ProjectSidebar({
             className="studio-textarea"
             data-testid="project-description-input"
             disabled={isBusy}
-            rows={3}
+            rows={2}
             value={projectDescription}
             onChange={(event) => onProjectFieldChange('description', event.target.value)}
             placeholder="対象業務や前提条件をひとことメモ"
