@@ -1,22 +1,20 @@
-import { contextBridge } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron'
 
-// Custom APIs for renderer
-const api = {}
+import { STUDIO_CHANNELS, type StudioApi } from '@shared/ipc'
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+const studioApi: StudioApi = {
+  listProjects: () => ipcRenderer.invoke(STUDIO_CHANNELS.listProjects),
+  getProject: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.getProject, input),
+  createProject: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.createProject, input),
+  deleteProject: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.deleteProject, input),
+  createFunctionEntry: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.createFunctionEntry, input),
+  deleteFunctionEntry: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.deleteFunctionEntry, input),
+  getSettings: () => ipcRenderer.invoke(STUDIO_CHANNELS.getSettings),
+  updateSettings: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.updateSettings, input)
+}
+
 if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
-  }
+  contextBridge.exposeInMainWorld('fpStudio', studioApi)
 } else {
-  // @ts-ignore (define in dts)
-  window.electron = electronAPI
-  // @ts-ignore (define in dts)
-  window.api = api
+  ;(window as unknown as Window & { fpStudio: StudioApi }).fpStudio = studioApi
 }
