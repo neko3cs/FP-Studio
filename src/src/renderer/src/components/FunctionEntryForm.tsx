@@ -1,5 +1,20 @@
 import { useState } from 'react'
 
+import {
+  Badge,
+  Body2,
+  Button,
+  Card,
+  Field,
+  Input,
+  makeStyles,
+  Select,
+  Text,
+  Textarea,
+  Title3,
+  tokens
+} from '@fluentui/react-components'
+
 import type { FunctionPointAnalysis, FunctionType } from '@shared/fp'
 import { FUNCTION_TYPES } from '@shared/fp'
 
@@ -25,6 +40,89 @@ interface FunctionEntryFormProps {
   onSubmit: () => void
 }
 
+const useStyles = makeStyles({
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    padding: tokens.spacingHorizontalL,
+    overflow: 'hidden'
+  },
+  cardCollapsed: {
+    height: '72px'
+  },
+  cardOpen: {
+    height: '396px'
+  },
+  headerButton: {
+    width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: '40px',
+    paddingTop: '0',
+    paddingRight: '0',
+    paddingBottom: '0',
+    paddingLeft: '0',
+    backgroundColor: 'transparent'
+  },
+  headerContent: {
+    minWidth: 0,
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: tokens.spacingHorizontalM
+  },
+  previewBadge: {
+    maxWidth: '100%'
+  },
+  chevron: {
+    transitionDuration: '200ms',
+    transitionProperty: 'transform'
+  },
+  chevronOpen: {
+    transform: 'rotate(180deg)'
+  },
+  panel: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    gap: tokens.spacingVerticalM,
+    paddingTop: tokens.spacingVerticalM,
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`
+  },
+  grid: {
+    display: 'grid',
+    gap: tokens.spacingVerticalM,
+    '@media (min-width: 1024px)': {
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+    },
+    '@media (min-width: 1280px)': {
+      gridTemplateColumns: 'minmax(0, 2fr) repeat(3, minmax(0, 1fr))'
+    }
+  },
+  noteField: {
+    marginTop: tokens.spacingVerticalXS
+  },
+  noteInput: {
+    minHeight: '72px'
+  },
+  actions: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalS,
+    '@media (min-width: 768px)': {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between'
+    }
+  },
+  saveButton: {
+    '@media (min-width: 768px)': {
+      marginLeft: 'auto'
+    }
+  }
+})
+
 export function FunctionEntryForm({
   projectName,
   values,
@@ -37,133 +135,127 @@ export function FunctionEntryForm({
   onCancel,
   onSubmit
 }: FunctionEntryFormProps): React.JSX.Element {
+  const styles = useStyles()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const isOpen = isEditing || !isCollapsed
 
   return (
-    <section className="studio-panel px-5 py-4">
-      <button
+    <Card
+      appearance="filled-alternative"
+      className={`${styles.card} ${isOpen ? styles.cardOpen : styles.cardCollapsed}`}
+    >
+      <Button
         aria-controls="function-entry-form-content"
         aria-expanded={isOpen}
-        className="flex w-full items-center justify-between gap-3 text-left"
+        appearance="subtle"
+        className={styles.headerButton}
         data-testid="function-form-accordion-button"
         onClick={() => setIsCollapsed((current) => !current)}
-        type="button"
       >
-        <div className="flex min-w-0 items-center gap-3">
-          <h3 className="studio-text-primary text-lg font-semibold tracking-tight">
+        <div className={styles.headerContent}>
+          <Title3 as="h3">
             {isEditing ? `${projectName} の機能を編集` : `${projectName} に機能を追加`}
-          </h3>
-          <div className="studio-preview px-3.5 py-2.5" data-testid="function-preview">
-            <p className="studio-text-primary text-base font-semibold">
-              {preview ? `${preview.difficulty} / ${preview.functionPoints} FP` : '入力待ち'}
-            </p>
-          </div>
+          </Title3>
+          <Badge
+            appearance="outline"
+            className={styles.previewBadge}
+            data-testid="function-preview"
+            shape="rounded"
+            size="large"
+          >
+            {preview ? `${preview.difficulty} / ${preview.functionPoints} FP` : '入力待ち'}
+          </Badge>
         </div>
-
-        <span
-          aria-hidden="true"
-          className={`studio-text-tertiary shrink-0 text-sm transition ${isOpen ? 'rotate-180' : ''}`}
-        >
-          ▾
-        </span>
-      </button>
+        <span className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}>▾</span>
+      </Button>
 
       {isOpen ? (
-        <div className="mt-4" id="function-entry-form-content">
-          <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-5">
-            <label className="space-y-2 xl:col-span-2">
-              <span className="studio-input-label">機能名</span>
-              <input
-                className="studio-input"
+        <div className={styles.panel} id="function-entry-form-content">
+          <div className={styles.grid}>
+            <Field label="機能名">
+              <Input
                 data-testid="function-name-input"
                 disabled={isBusy}
-                value={values.name}
-                onChange={(event) => onFieldChange('name', event.target.value)}
                 placeholder="例: 顧客登録、売上照会"
+                value={values.name}
+                onChange={(_, data) => onFieldChange('name', data.value)}
               />
-            </label>
+            </Field>
 
-            <label className="space-y-2">
-              <span className="studio-input-label">Function Type</span>
-              <select
-                className="studio-input"
+            <Field label="Function Type">
+              <Select
                 data-testid="function-type-select"
                 disabled={isBusy}
                 value={values.functionType}
-                onChange={(event) => onFieldChange('functionType', event.target.value)}
+                onChange={(_, data) => onFieldChange('functionType', data.value)}
               >
                 {FUNCTION_TYPES.map((functionType) => (
                   <option key={functionType} value={functionType}>
                     {functionType}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
 
-            <label className="space-y-2">
-              <span className="studio-input-label">DET</span>
-              <input
-                className="studio-input"
+            <Field label="DET">
+              <Input
                 data-testid="det-input"
                 disabled={isBusy}
                 inputMode="numeric"
                 value={values.det}
-                onChange={(event) => onFieldChange('det', event.target.value)}
+                onChange={(_, data) => onFieldChange('det', data.value)}
               />
-            </label>
+            </Field>
 
-            <label className="space-y-2">
-              <span className="studio-input-label">{referenceLabel}</span>
-              <input
-                className="studio-input"
+            <Field label={referenceLabel}>
+              <Input
                 data-testid="reference-count-input"
                 disabled={isBusy}
                 inputMode="numeric"
                 value={values.referenceCount}
-                onChange={(event) => onFieldChange('referenceCount', event.target.value)}
+                onChange={(_, data) => onFieldChange('referenceCount', data.value)}
               />
-            </label>
+            </Field>
           </div>
 
-          <label className="mt-3 block space-y-2">
-            <span className="studio-input-label">備考</span>
-            <textarea
-              className="studio-textarea"
+          <Field className={styles.noteField} label="備考">
+            <Textarea
+              className={styles.noteInput}
               data-testid="function-note-input"
               disabled={isBusy}
+              placeholder="判断根拠や対象画面などをメモ"
+              resize="none"
               rows={2}
               value={values.note}
-              onChange={(event) => onFieldChange('note', event.target.value)}
-              placeholder="判断根拠や対象画面などをメモ"
+              onChange={(_, data) => onFieldChange('note', data.value)}
             />
-          </label>
+          </Field>
 
-          <div className="mt-4 flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+          <div className={styles.actions}>
             {isEditing ? (
-              <button
-                className="studio-secondary-button"
+              <Button
+                appearance="secondary"
                 data-testid="cancel-edit-button"
                 disabled={isBusy}
                 onClick={onCancel}
-                type="button"
               >
                 編集をキャンセル
-              </button>
+              </Button>
             ) : (
-              <div />
+              <Body2 />
             )}
-            <button
-              className="studio-primary-button md:ml-auto"
+            <Button
+              appearance="primary"
+              className={styles.saveButton}
               data-testid="add-function-button"
               disabled={isBusy || !canSubmit}
               onClick={onSubmit}
             >
-              {isEditing ? '変更を保存' : '機能を追加'}
-            </button>
+              <Text>{isEditing ? '変更を保存' : '機能を追加'}</Text>
+            </Button>
           </div>
         </div>
       ) : null}
-    </section>
+    </Card>
   )
 }

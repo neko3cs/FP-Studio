@@ -1,3 +1,15 @@
+import {
+  Body1,
+  Card,
+  makeStyles,
+  MessageBar,
+  MessageBarBody,
+  Spinner,
+  Title2,
+  tokens
+} from '@fluentui/react-components'
+import { useEffect } from 'react'
+
 import { EmptyProjectState } from './components/EmptyProjectState'
 import { FunctionEntryForm } from './components/FunctionEntryForm'
 import { FunctionEntryTable } from './components/FunctionEntryTable'
@@ -6,7 +18,61 @@ import { ProjectSummaryCards } from './components/ProjectSummaryCards'
 import { SettingsPanel } from './components/SettingsPanel'
 import { useFpStudioApp } from './hooks/useFpStudioApp'
 
+const useStyles = makeStyles({
+  shell: {
+    height: '100%',
+    backgroundColor: tokens.colorNeutralBackground2,
+    color: tokens.colorNeutralForeground1
+  },
+  layout: {
+    height: '100%',
+    maxWidth: '1600px',
+    margin: '0 auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalL,
+    padding: '20px',
+    overflow: 'hidden',
+    '@media (min-width: 1280px)': {
+      display: 'grid',
+      gridTemplateColumns: '340px minmax(0, 1fr)'
+    }
+  },
+  main: {
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalL,
+    overflow: 'hidden'
+  },
+  content: {
+    minHeight: 0,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalL,
+    overflow: 'hidden'
+  },
+  loadingShell: {
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: tokens.spacingHorizontalXXL
+  },
+  loadingCard: {
+    minWidth: '320px',
+    maxWidth: '420px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: tokens.spacingVerticalM,
+    padding: tokens.spacingHorizontalXXL
+  }
+})
+
 function App(): React.JSX.Element {
+  const styles = useStyles()
   const {
     projects,
     selectedProject,
@@ -20,20 +86,25 @@ function App(): React.JSX.Element {
     actions
   } = useFpStudioApp()
 
+  useEffect(() => {
+    document.getElementById('startup-fallback')?.remove()
+  }, [])
+
   if (isLoading) {
     return (
-      <div className="studio-loading-shell">
-        <div className="studio-panel px-8 py-6 text-center">
-          <p className="studio-text-secondary text-sm font-medium">FP Studio</p>
-          <p className="studio-text-primary mt-2 text-base">ローカルデータを読み込んでいます…</p>
-        </div>
+      <div className={styles.loadingShell}>
+        <Card appearance="filled-alternative" className={styles.loadingCard}>
+          <Title2 as="h1">FP Studio</Title2>
+          <Spinner size="medium" />
+          <Body1>ローカルデータを読み込んでいます…</Body1>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="studio-app-shell" data-testid="fp-studio-app">
-      <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-4 overflow-hidden px-5 py-5 xl:grid xl:grid-cols-[340px_minmax(0,1fr)]">
+    <div className={styles.shell} data-testid="fp-studio-app">
+      <div className={styles.layout}>
         <ProjectSidebar
           isBusy={isBusy}
           projectDescription={projectForm.values.description}
@@ -46,11 +117,11 @@ function App(): React.JSX.Element {
           onSelectProject={actions.selectProject}
         />
 
-        <main className="flex min-h-0 flex-col gap-4 overflow-hidden">
+        <main className={styles.main}>
           {errorMessage ? (
-            <div className="studio-error-banner" data-testid="app-error-message">
-              {errorMessage}
-            </div>
+            <MessageBar data-testid="app-error-message" intent="error">
+              <MessageBarBody>{errorMessage}</MessageBarBody>
+            </MessageBar>
           ) : null}
 
           <SettingsPanel
@@ -62,7 +133,7 @@ function App(): React.JSX.Element {
           />
 
           {selectedProject ? (
-            <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
+            <div className={styles.content}>
               <ProjectSummaryCards project={selectedProject} />
               <FunctionEntryForm
                 canSubmit={entryForm.canSubmit}

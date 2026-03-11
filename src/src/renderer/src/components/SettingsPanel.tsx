@@ -1,5 +1,16 @@
 import { useState } from 'react'
 
+import {
+  Body2,
+  Button,
+  Card,
+  Field,
+  Input,
+  makeStyles,
+  Text,
+  tokens
+} from '@fluentui/react-components'
+
 interface SettingsPanelProps {
   defaultProductivity: string
   canSubmit: boolean
@@ -8,6 +19,66 @@ interface SettingsPanelProps {
   onSubmit: () => void
 }
 
+const useStyles = makeStyles({
+  card: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    padding: tokens.spacingHorizontalL,
+    overflow: 'hidden'
+  },
+  cardCollapsed: {
+    height: '72px'
+  },
+  cardOpen: {
+    height: '168px'
+  },
+  headerButton: {
+    width: '100%',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: '40px',
+    paddingTop: '0',
+    paddingRight: '0',
+    paddingBottom: '0',
+    paddingLeft: '0',
+    backgroundColor: 'transparent'
+  },
+  headerContent: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: tokens.spacingHorizontalM
+  },
+  currentValueLabel: {
+    color: tokens.colorNeutralForeground3
+  },
+  chevron: {
+    transitionDuration: '200ms',
+    transitionProperty: 'transform'
+  },
+  chevronOpen: {
+    transform: 'rotate(180deg)'
+  },
+  panel: {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    overflow: 'auto',
+    gap: tokens.spacingVerticalM,
+    paddingTop: tokens.spacingVerticalM,
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    '@media (min-width: 1024px)': {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      justifyContent: 'space-between'
+    }
+  },
+  field: {
+    flex: 1
+  }
+})
+
 export function SettingsPanel({
   defaultProductivity,
   canSubmit,
@@ -15,58 +86,51 @@ export function SettingsPanel({
   onChange,
   onSubmit
 }: SettingsPanelProps): React.JSX.Element {
+  const styles = useStyles()
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <section className="studio-panel px-5 py-4">
-      <button
+    <Card
+      appearance="filled-alternative"
+      className={`${styles.card} ${isOpen ? styles.cardOpen : styles.cardCollapsed}`}
+    >
+      <Button
         aria-controls="settings-panel-content"
         aria-expanded={isOpen}
-        className="flex w-full items-center justify-between gap-3 text-left"
+        appearance="subtle"
+        className={styles.headerButton}
         data-testid="settings-accordion-button"
         onClick={() => setIsOpen((current) => !current)}
-        type="button"
       >
-        <div className="flex min-w-0 items-center gap-3">
-          <h3 className="studio-text-primary text-sm font-semibold">生産性設定</h3>
-          <p className="studio-text-tertiary text-sm">{defaultProductivity} 人日 / FP</p>
+        <div className={styles.headerContent}>
+          <Body2>生産性設定</Body2>
+          <Text className={styles.currentValueLabel}>{defaultProductivity} 人日 / FP</Text>
         </div>
-
-        <span
-          aria-hidden="true"
-          className={`studio-text-tertiary shrink-0 text-sm transition ${isOpen ? 'rotate-180' : ''}`}
-        >
-          ▾
-        </span>
-      </button>
+        <span className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}>▾</span>
+      </Button>
 
       {isOpen ? (
-        <div
-          className="mt-3 flex flex-col gap-3 border-t pt-3 lg:flex-row lg:items-end lg:justify-between"
-          id="settings-panel-content"
-        >
-          <label className="flex-1 space-y-2">
-            <span className="studio-input-label">デフォルト生産性 (人日 / FP)</span>
-            <input
-              className="studio-input"
+        <div className={styles.panel} id="settings-panel-content">
+          <Field className={styles.field} label="デフォルト生産性 (人日 / FP)">
+            <Input
               data-testid="settings-productivity-input"
               disabled={isBusy}
               inputMode="decimal"
               value={defaultProductivity}
-              onChange={(event) => onChange(event.target.value)}
+              onChange={(_, data) => onChange(data.value)}
             />
-          </label>
+          </Field>
 
-          <button
-            className="studio-secondary-button shrink-0"
+          <Button
+            appearance="secondary"
             data-testid="settings-save-button"
             disabled={isBusy || !canSubmit}
             onClick={onSubmit}
           >
             設定を保存
-          </button>
+          </Button>
         </div>
       ) : null}
-    </section>
+    </Card>
   )
 }

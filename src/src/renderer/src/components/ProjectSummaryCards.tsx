@@ -1,10 +1,34 @@
+import { Body1Strong, Caption1, Card, makeStyles, tokens } from '@fluentui/react-components'
+
 import type { ProjectDetail } from '@shared/fp'
 
 interface ProjectSummaryCardsProps {
   project: ProjectDetail
 }
 
+const useStyles = makeStyles({
+  grid: {
+    display: 'grid',
+    gap: tokens.spacingVerticalM,
+    '@media (min-width: 768px)': {
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'
+    }
+  },
+  card: {
+    paddingTop: tokens.spacingVerticalM,
+    paddingRight: tokens.spacingHorizontalL,
+    paddingBottom: tokens.spacingVerticalM,
+    paddingLeft: tokens.spacingHorizontalL,
+    gap: tokens.spacingVerticalXS
+  },
+  value: {
+    fontSize: '1.5rem',
+    lineHeight: 1.1
+  }
+})
+
 export function ProjectSummaryCards({ project }: ProjectSummaryCardsProps): React.JSX.Element {
+  const styles = useStyles()
   const cards = [
     {
       id: 'total-ufp',
@@ -24,17 +48,14 @@ export function ProjectSummaryCards({ project }: ProjectSummaryCardsProps): Reac
   ]
 
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className={styles.grid}>
       {cards.map((card) => (
-        <section key={card.label} className="studio-panel px-4 py-3">
-          <p className="studio-text-tertiary text-xs font-medium">{card.label}</p>
-          <p
-            className="studio-text-primary mt-1 text-2xl font-semibold leading-none tracking-tight"
-            data-testid={`summary-${card.id}`}
-          >
+        <Card key={card.label} appearance="filled-alternative" className={styles.card}>
+          <Caption1>{card.label}</Caption1>
+          <Body1Strong className={styles.value} data-testid={`summary-${card.id}`}>
             {card.value}
-          </p>
-        </section>
+          </Body1Strong>
+        </Card>
       ))}
     </div>
   )

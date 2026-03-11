@@ -158,9 +158,11 @@ test.describe('FP Studio business scenarios', () => {
       await expect(
         app.page.getByTestId('function-entry-table-body').getByText('商談照会')
       ).toHaveCount(0)
-      await expect(app.page.getByTestId('function-entry-table-body')).toContainText(
+      await app.page.getByTestId(/function-entry-note-detail-/).click()
+      await expect(app.page.getByTestId('function-note-dialog-content')).toContainText(
         '詳細画面と履歴表示'
       )
+      await app.page.getByRole('button', { name: '閉じる' }).click()
     } finally {
       await closeStudioApp(app)
       await removeAppDataRoot(appDataRoot)
@@ -191,8 +193,40 @@ test.describe('FP Studio business scenarios', () => {
       ).toBeVisible()
 
       await app.page.getByRole('button', { name: '会計基盤更新 プロジェクトを削除' }).click()
+      await expect(app.page.getByText('プロジェクトを削除しますか？')).toBeVisible()
+      await app.page.getByRole('button', { name: '削除する' }).click()
       await expect(app.page.getByText('最初のプロジェクトを作成してください')).toBeVisible()
       await expect(app.page.getByTestId('project-list').getByText('会計基盤更新')).toHaveCount(0)
+    } finally {
+      await closeStudioApp(app)
+      await removeAppDataRoot(appDataRoot)
+    }
+  })
+
+  test('長い備考でも画面表示を維持できる', async () => {
+    const appDataRoot = await createAppDataRoot()
+    const app = await launchStudioApp(appDataRoot)
+
+    try {
+      const longNote = '長文備考'.repeat(2000)
+
+      await createProject(app.page, '長文備考検証', '長文表示の確認')
+      await addFunctionEntry(app.page, {
+        name: '長文備考機能',
+        functionType: 'EI',
+        det: '4',
+        referenceCount: '1',
+        note: longNote,
+        expectedPreview: 'Low / 3 FP'
+      })
+
+      await expect(app.page.getByTestId('fp-studio-app')).toBeVisible()
+      await expect(app.page.getByTestId('summary-total-ufp')).toHaveText('3')
+
+      await app.page.getByTestId(/function-entry-note-detail-/).click()
+      await expect(app.page.getByTestId('function-note-dialog-content')).toContainText('長文備考')
+      await app.page.getByRole('button', { name: '閉じる' }).click()
+      await expect(app.page.getByTestId('project-list').getByText('長文備考検証')).toBeVisible()
     } finally {
       await closeStudioApp(app)
       await removeAppDataRoot(appDataRoot)

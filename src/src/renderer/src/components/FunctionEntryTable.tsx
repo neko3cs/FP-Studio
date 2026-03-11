@@ -1,3 +1,28 @@
+import {
+  Badge,
+  Body1Strong,
+  Body2,
+  Button,
+  Caption1,
+  Card,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  makeStyles,
+  Table,
+  TableBody,
+  TableCell,
+  TableCellLayout,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+  tokens
+} from '@fluentui/react-components'
+import { useState } from 'react'
+
 import type { FunctionEntry } from '@shared/fp'
 
 interface FunctionEntryTableProps {
@@ -7,19 +32,83 @@ interface FunctionEntryTableProps {
   onDeleteEntry: (entryId: string) => void
 }
 
-function getDisplayNote(note: string): string {
-  if (note.length <= 8) {
-    return note
+const difficultyColorMap: Record<FunctionEntry['difficulty'], 'success' | 'warning' | 'danger'> = {
+  Low: 'success',
+  Average: 'warning',
+  High: 'danger'
+}
+
+const useStyles = makeStyles({
+  root: {
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    paddingTop: tokens.spacingVerticalM,
+    paddingRight: tokens.spacingHorizontalL,
+    paddingBottom: tokens.spacingVerticalM,
+    paddingLeft: tokens.spacingHorizontalL
+  },
+  emptyCard: {
+    padding: tokens.spacingHorizontalXXL,
+    textAlign: 'center'
+  },
+  tableHeader: {
+    marginBottom: tokens.spacingVerticalM
+  },
+  tableScroller: {
+    minHeight: '180px',
+    flex: 1,
+    overflow: 'auto'
+  },
+  table: {
+    minWidth: '980px',
+    tableLayout: 'fixed'
+  },
+  nameCell: {
+    minWidth: 0
+  },
+  metricCell: {
+    width: '88px'
+  },
+  noteColumn: {
+    width: '96px'
+  },
+  actionColumn: {
+    width: '196px'
+  },
+  noteFallback: {
+    color: tokens.colorNeutralForeground3
+  },
+  noteCell: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  noteDetailButton: {
+    minWidth: '72px'
+  },
+  actionCell: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    flexWrap: 'nowrap',
+    gap: tokens.spacingHorizontalS
+  },
+  actionButton: {
+    minWidth: '72px',
+    flexShrink: 0
+  },
+  deleteButton: {
+    color: tokens.colorPaletteRedForeground2
+  },
+  dialogContent: {
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word'
   }
-
-  return `${note.slice(0, 8)}…`
-}
-
-const difficultyClassName: Record<FunctionEntry['difficulty'], string> = {
-  Low: 'border border-emerald-400/20 bg-emerald-500/10 text-emerald-100',
-  Average: 'border border-amber-400/20 bg-amber-500/10 text-amber-100',
-  High: 'border border-rose-400/20 bg-rose-500/10 text-rose-100'
-}
+})
 
 export function FunctionEntryTable({
   entries,
@@ -27,99 +116,137 @@ export function FunctionEntryTable({
   onEditEntry,
   onDeleteEntry
 }: FunctionEntryTableProps): React.JSX.Element {
+  const styles = useStyles()
+  const [selectedNoteEntry, setSelectedNoteEntry] = useState<FunctionEntry | null>(null)
+
   if (entries.length === 0) {
     return (
-      <section className="studio-empty-state p-8">
-        まだ機能が登録されていません。上のフォームから最初の FP エントリを追加してください。
-      </section>
+      <Card appearance="filled-alternative" className={styles.emptyCard}>
+        <Body2>
+          まだ機能が登録されていません。上のフォームから最初の FP エントリを追加してください。
+        </Body2>
+      </Card>
     )
   }
 
   return (
-    <section className="studio-panel flex min-h-0 flex-col overflow-visible">
-      <div className="studio-divider border-b px-6 py-4">
-        <h3 className="studio-text-primary text-lg font-semibold">登録済み機能</h3>
+    <Card appearance="filled-alternative" className={styles.root}>
+      <div className={styles.tableHeader}>
+        <Body1Strong>登録済み機能</Body1Strong>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-auto">
-        <table className="studio-table">
-          <thead className="text-left text-xs">
-            <tr>
-              <th className="px-6 py-4">機能名</th>
-              <th className="px-4 py-4">Type</th>
-              <th className="px-4 py-4">DET</th>
-              <th className="px-4 py-4">FTR / RET</th>
-              <th className="px-4 py-4">難易度</th>
-              <th className="px-4 py-4">FP</th>
-              <th className="px-6 py-4 text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody data-testid="function-entry-table-body">
-            {entries.map((entry) => (
-              <tr
-                key={entry.id}
-                className="bg-transparent"
-                data-testid={`function-entry-${entry.id}`}
-              >
-                <td className="px-6 py-4">
-                  <div>
-                    <p className="studio-text-primary font-medium">{entry.name}</p>
-                    {entry.note ? (
-                      <div className="studio-tooltip-trigger mt-1">
-                        <p className="studio-text-secondary w-[9ch] truncate text-sm">
-                          {getDisplayNote(entry.note)}
-                        </p>
-                        {entry.note.length > 8 ? (
-                          <div className="studio-tooltip">{entry.note}</div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <p className="studio-text-secondary mt-1 text-sm">備考なし</p>
-                    )}
-                  </div>
-                </td>
-                <td className="studio-text-secondary px-4 py-4 font-medium">
-                  {entry.functionType}
-                </td>
-                <td className="px-4 py-4">{entry.det}</td>
-                <td className="px-4 py-4">{entry.referenceCount}</td>
-                <td className="px-4 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${difficultyClassName[entry.difficulty]}`}
+      <div className={styles.tableScroller}>
+        <Table aria-label="登録済み機能" className={styles.table}>
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell>機能名</TableHeaderCell>
+              <TableHeaderCell className={styles.metricCell}>Type</TableHeaderCell>
+              <TableHeaderCell className={styles.metricCell}>DET</TableHeaderCell>
+              <TableHeaderCell className={styles.metricCell}>FTR / RET</TableHeaderCell>
+              <TableHeaderCell className={styles.metricCell}>難易度</TableHeaderCell>
+              <TableHeaderCell className={styles.metricCell}>FP</TableHeaderCell>
+              <TableHeaderCell className={styles.noteColumn}>備考</TableHeaderCell>
+              <TableHeaderCell className={styles.actionColumn}>操作</TableHeaderCell>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody data-testid="function-entry-table-body">
+            {entries.map((entry) => {
+              const noteCell = entry.note ? (
+                <div className={styles.noteCell}>
+                  <Button
+                    appearance="subtle"
+                    aria-label={`${entry.name} の備考を表示`}
+                    className={styles.noteDetailButton}
+                    data-testid={`function-entry-note-detail-${entry.id}`}
+                    onClick={() => setSelectedNoteEntry(entry)}
                   >
-                    {entry.difficulty}
-                  </span>
-                </td>
-                <td className="studio-text-primary px-4 py-4 font-semibold">
-                  {entry.functionPoints}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center justify-end gap-3">
-                    <button
-                      aria-label={`${entry.name} を編集`}
-                      className="studio-text-secondary text-xs font-medium transition hover:opacity-80"
-                      disabled={isBusy}
-                      onClick={() => onEditEntry(entry)}
-                      type="button"
+                    詳細
+                  </Button>
+                </div>
+              ) : (
+                <Caption1 className={styles.noteFallback}>なし</Caption1>
+              )
+
+              return (
+                <TableRow key={entry.id} data-testid={`function-entry-${entry.id}`}>
+                  <TableCell className={styles.nameCell}>
+                    <TableCellLayout>
+                      <Body1Strong>{entry.name}</Body1Strong>
+                    </TableCellLayout>
+                  </TableCell>
+                  <TableCell className={styles.metricCell}>{entry.functionType}</TableCell>
+                  <TableCell className={styles.metricCell}>{entry.det}</TableCell>
+                  <TableCell className={styles.metricCell}>{entry.referenceCount}</TableCell>
+                  <TableCell className={styles.metricCell}>
+                    <Badge
+                      appearance="tint"
+                      color={difficultyColorMap[entry.difficulty]}
+                      shape="rounded"
                     >
-                      編集
-                    </button>
-                    <button
-                      aria-label={`${entry.name} を削除`}
-                      className="studio-danger-button"
-                      disabled={isBusy}
-                      onClick={() => onDeleteEntry(entry.id)}
-                      type="button"
-                    >
-                      削除
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                      {entry.difficulty}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className={styles.metricCell}>
+                    <Body1Strong>{entry.functionPoints}</Body1Strong>
+                  </TableCell>
+                  <TableCell className={styles.noteColumn}>{noteCell}</TableCell>
+                  <TableCell className={styles.actionColumn}>
+                    <div className={styles.actionCell}>
+                      <Button
+                        aria-label={`${entry.name} を編集`}
+                        appearance="subtle"
+                        className={styles.actionButton}
+                        disabled={isBusy}
+                        onClick={() => onEditEntry(entry)}
+                      >
+                        編集
+                      </Button>
+                      <Button
+                        aria-label={`${entry.name} を削除`}
+                        appearance="subtle"
+                        className={`${styles.actionButton} ${styles.deleteButton}`}
+                        disabled={isBusy}
+                        onClick={() => onDeleteEntry(entry.id)}
+                      >
+                        削除
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
       </div>
-    </section>
+
+      <Dialog
+        open={selectedNoteEntry !== null}
+        onOpenChange={(_event, data) => {
+          if (!data.open) {
+            setSelectedNoteEntry(null)
+          }
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>
+              {selectedNoteEntry ? `${selectedNoteEntry.name} の備考` : '備考'}
+            </DialogTitle>
+            <DialogContent
+              className={styles.dialogContent}
+              data-testid="function-note-dialog-content"
+            >
+              {selectedNoteEntry?.note}
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="primary" onClick={() => setSelectedNoteEntry(null)}>
+                閉じる
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </Card>
   )
 }

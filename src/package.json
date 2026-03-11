@@ -30,6 +30,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@fluentui/react-components": "^9.73.3",
     "better-sqlite3": "^12.6.2",
     "drizzle-orm": "^0.45.1"
   },
