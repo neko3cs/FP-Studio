@@ -7,6 +7,14 @@ interface FunctionEntryTableProps {
   onDeleteEntry: (entryId: string) => void
 }
 
+function getDisplayNote(note: string): string {
+  if (note.length <= 8) {
+    return note
+  }
+
+  return `${note.slice(0, 8)}…`
+}
+
 const difficultyClassName: Record<FunctionEntry['difficulty'], string> = {
   Low: 'border border-emerald-400/20 bg-emerald-500/10 text-emerald-100',
   Average: 'border border-amber-400/20 bg-amber-500/10 text-amber-100',
@@ -28,12 +36,12 @@ export function FunctionEntryTable({
   }
 
   return (
-    <section className="studio-panel overflow-hidden">
+    <section className="studio-panel overflow-visible">
       <div className="studio-divider border-b px-6 py-4">
         <h3 className="studio-text-primary text-lg font-semibold">登録済み機能</h3>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-visible">
         <table className="studio-table">
           <thead className="text-left text-xs">
             <tr>
@@ -56,7 +64,18 @@ export function FunctionEntryTable({
                 <td className="px-6 py-4">
                   <div>
                     <p className="studio-text-primary font-medium">{entry.name}</p>
-                    <p className="studio-text-secondary mt-1 text-sm">{entry.note || '備考なし'}</p>
+                    {entry.note ? (
+                      <div className="studio-tooltip-trigger mt-1">
+                        <p className="studio-text-secondary w-[9ch] truncate text-sm">
+                          {getDisplayNote(entry.note)}
+                        </p>
+                        {entry.note.length > 8 ? (
+                          <div className="studio-tooltip">{entry.note}</div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="studio-text-secondary mt-1 text-sm">備考なし</p>
+                    )}
                   </div>
                 </td>
                 <td className="studio-text-secondary px-4 py-4 font-medium">
