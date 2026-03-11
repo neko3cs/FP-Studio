@@ -24,18 +24,10 @@ export function ProjectSidebar({
   onDeleteProject
 }: ProjectSidebarProps): React.JSX.Element {
   return (
-    <aside className="flex h-full flex-col gap-6 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-panel backdrop-blur">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-400">Projects</p>
-        <h2 className="text-2xl font-semibold text-white">案件を管理</h2>
-        <p className="text-sm text-slate-400">
-          新規案件を作成し、保存済みの見積をすぐに呼び出せます。
-        </p>
-      </div>
-
-      <div className="space-y-3 rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
+    <aside className="studio-panel flex h-full flex-col gap-5 p-5">
+      <div className="studio-panel-muted space-y-3 p-4">
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-200">プロジェクト名</span>
+          <span className="studio-input-label">プロジェクト名</span>
           <input
             className="studio-input"
             data-testid="project-name-input"
@@ -47,7 +39,7 @@ export function ProjectSidebar({
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-200">説明</span>
+          <span className="studio-input-label">説明</span>
           <textarea
             className="studio-textarea"
             data-testid="project-description-input"
@@ -69,9 +61,14 @@ export function ProjectSidebar({
         </button>
       </div>
 
+      <div className="flex items-center justify-between">
+        <h2 className="studio-text-secondary text-sm font-medium">プロジェクト</h2>
+        <span className="studio-text-tertiary text-sm">{projects.length}件</span>
+      </div>
+
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1" data-testid="project-list">
         {projects.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">
+          <div className="studio-empty-state rounded-2xl p-4 text-left">
             まだプロジェクトがありません。まずは左上から1件作成してください。
           </div>
         ) : (
@@ -81,26 +78,20 @@ export function ProjectSidebar({
             return (
               <div
                 key={project.id}
-                className={`rounded-2xl border p-4 transition ${
-                  isSelected
-                    ? 'border-brand-400 bg-brand-500/10 shadow-[0_0_0_1px_rgba(56,189,248,0.4)]'
-                    : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
-                }`}
+                className={`studio-card ${isSelected ? 'studio-card-selected' : ''}`}
                 data-testid={`project-card-${project.id}`}
               >
                 <button className="w-full text-left" onClick={() => onSelectProject(project.id)}>
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-base font-semibold text-white">{project.name}</p>
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="studio-text-primary text-[15px] font-medium">{project.name}</p>
+                      <p className="studio-text-secondary mt-1 text-sm">
                         {project.description || '説明なし'}
                       </p>
                     </div>
-                    <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs font-semibold text-brand-300">
-                      {project.totalFunctionPoints} UFP
-                    </span>
+                    <span className="studio-chip">{project.totalFunctionPoints} UFP</span>
                   </div>
-                  <div className="mt-3 flex items-center gap-3 text-xs text-slate-400">
+                  <div className="studio-text-tertiary mt-3 flex items-center gap-3 text-xs">
                     <span>{project.functionCount} 機能</span>
                     <span>{project.estimatedEffortDays} 人日</span>
                   </div>
@@ -108,7 +99,7 @@ export function ProjectSidebar({
 
                 <button
                   aria-label={`${project.name} プロジェクトを削除`}
-                  className="mt-3 text-xs font-medium text-rose-300 transition hover:text-rose-200"
+                  className="studio-danger-button mt-3"
                   disabled={isBusy}
                   onClick={() => onDeleteProject(project.id)}
                 >
