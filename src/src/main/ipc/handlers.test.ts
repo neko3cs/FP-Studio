@@ -31,6 +31,7 @@ describe('createStudioIpcHandlers', () => {
       })),
       deleteProject: vi.fn(),
       createFunctionEntry: vi.fn(),
+      updateFunctionEntry: vi.fn(),
       deleteFunctionEntry: vi.fn(),
       getSettings: vi.fn(() => ({ defaultProductivity: 1 })),
       updateSettings: vi.fn((input) => input)
@@ -41,11 +42,29 @@ describe('createStudioIpcHandlers', () => {
     await expect(handlers.listProjects()).resolves.toHaveLength(1)
     await handlers.createProject({ name: '新規案件', description: '説明' })
     await handlers.deleteProject({ projectId: 'p1' })
+    await handlers.updateFunctionEntry({
+      projectId: 'p1',
+      entryId: 'f1',
+      name: '機能',
+      functionType: 'EI',
+      det: 4,
+      referenceCount: 1,
+      note: ''
+    })
     await handlers.updateSettings({ defaultProductivity: 1.25 })
 
     expect(service.listProjects).toHaveBeenCalledTimes(1)
     expect(service.createProject).toHaveBeenCalledWith({ name: '新規案件', description: '説明' })
     expect(service.deleteProject).toHaveBeenCalledWith('p1')
+    expect(service.updateFunctionEntry).toHaveBeenCalledWith({
+      projectId: 'p1',
+      entryId: 'f1',
+      name: '機能',
+      functionType: 'EI',
+      det: 4,
+      referenceCount: 1,
+      note: ''
+    })
     expect(service.updateSettings).toHaveBeenCalledWith({ defaultProductivity: 1.25 })
   })
 })

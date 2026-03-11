@@ -8,6 +8,7 @@ import {
   type ProjectDetail,
   type ProjectSummary,
   type StudioSettings,
+  type UpdateFunctionEntryInput,
   type UpdateSettingsInput
 } from '@shared/fp'
 
@@ -19,6 +20,7 @@ export interface StudioService {
   createProject: (input: CreateProjectInput) => ProjectDetail
   deleteProject: (projectId: string) => void
   createFunctionEntry: (input: CreateFunctionEntryInput) => ProjectDetail
+  updateFunctionEntry: (input: UpdateFunctionEntryInput) => ProjectDetail
   deleteFunctionEntry: (input: DeleteFunctionEntryInput) => ProjectDetail
   getSettings: () => StudioSettings
   updateSettings: (input: UpdateSettingsInput) => StudioSettings
@@ -129,6 +131,45 @@ export function createStudioService(repository: StudioRepository): StudioService
 
       return toProjectDetail(
         { ...project, updatedAt: now },
+        repository.listFunctionEntries(project.id),
+        repository.getSettings()
+      )
+    },
+    updateFunctionEntry: (input) => {
+      const project = repository.getProject(input.projectId)
+
+      if (!project) {
+        throw new Error('対象プロジェクトが見つかりません。')
+      }
+
+      const currentEntry = repository
+        .listFunctionEntries(input.projectId)
+        .find((entry) => entry.id === input.entryId)
+
+      if (!currentEntry) {
+        throw new Error('更新対象の機能が見つかりません。')
+      }
+
+      const det = requireInteger(input.det, 'DET', 1)
+      const referenceCount = requireInteger(input.referenceCount, '参照ファイル数', 0)
+      const analysis = analyzeFunctionPoint(input.functionType, det, referenceCount)
+      const updatedAt = new Date().toISOString()
+
+      repository.updateFunctionEntry({
+        ...currentEntry,
+        name: requireNonEmptyText(input.name, '機能名'),
+        functionType: input.functionType,
+        det,
+        referenceCount,
+        difficulty: analysis.difficulty,
+        functionPoints: analysis.functionPoints,
+        note: input.note.trim(),
+        updatedAt
+      })
+      repository.updateProjectTimestamp(project.id, updatedAt)
+
+      return toProjectDetail(
+        { ...project, updatedAt },
         repository.listFunctionEntries(project.id),
         repository.getSettings()
       )

@@ -62,6 +62,10 @@ export interface CreateFunctionEntryInput {
   note: string
 }
 
+export interface UpdateFunctionEntryInput extends CreateFunctionEntryInput {
+  entryId: string
+}
+
 export interface DeleteFunctionEntryInput {
   projectId: string
   entryId: string
