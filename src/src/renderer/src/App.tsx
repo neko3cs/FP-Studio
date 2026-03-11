@@ -35,7 +35,7 @@ function App(): React.JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-slate-950 text-slate-100" data-testid="fp-studio-app">
       <div className="mx-auto flex min-h-screen max-w-[1680px] flex-col gap-6 px-6 py-6 xl:grid xl:grid-cols-[360px_minmax(0,1fr)]">
         <ProjectSidebar
           isBusy={isBusy}
@@ -64,7 +64,10 @@ function App(): React.JSX.Element {
           </header>
 
           {errorMessage ? (
-            <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+            <div
+              className="rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100"
+              data-testid="app-error-message"
+            >
               {errorMessage}
             </div>
           ) : null}

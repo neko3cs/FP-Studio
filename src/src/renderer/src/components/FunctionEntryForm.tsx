@@ -42,7 +42,10 @@ export function FunctionEntryForm({
           </p>
         </div>
 
-        <div className="rounded-2xl border border-brand-500/30 bg-brand-500/10 px-4 py-3 text-right">
+        <div
+          className="rounded-2xl border border-brand-500/30 bg-brand-500/10 px-4 py-3 text-right"
+          data-testid="function-preview"
+        >
           <p className="text-xs font-medium uppercase tracking-[0.24em] text-brand-200">Preview</p>
           <p className="mt-1 text-xl font-semibold text-white">
             {preview ? `${preview.difficulty} / ${preview.functionPoints} FP` : '入力待ち'}
@@ -55,6 +58,7 @@ export function FunctionEntryForm({
           <span className="text-sm font-medium text-slate-200">機能名</span>
           <input
             className="studio-input"
+            data-testid="function-name-input"
             disabled={isBusy}
             value={values.name}
             onChange={(event) => onFieldChange('name', event.target.value)}
@@ -66,6 +70,7 @@ export function FunctionEntryForm({
           <span className="text-sm font-medium text-slate-200">Function Type</span>
           <select
             className="studio-input"
+            data-testid="function-type-select"
             disabled={isBusy}
             value={values.functionType}
             onChange={(event) => onFieldChange('functionType', event.target.value)}
@@ -82,6 +87,7 @@ export function FunctionEntryForm({
           <span className="text-sm font-medium text-slate-200">DET</span>
           <input
             className="studio-input"
+            data-testid="det-input"
             disabled={isBusy}
             inputMode="numeric"
             value={values.det}
@@ -93,6 +99,7 @@ export function FunctionEntryForm({
           <span className="text-sm font-medium text-slate-200">{referenceLabel}</span>
           <input
             className="studio-input"
+            data-testid="reference-count-input"
             disabled={isBusy}
             inputMode="numeric"
             value={values.referenceCount}
@@ -105,6 +112,7 @@ export function FunctionEntryForm({
         <span className="text-sm font-medium text-slate-200">備考</span>
         <textarea
           className="studio-textarea"
+          data-testid="function-note-input"
           disabled={isBusy}
           rows={3}
           value={values.note}
@@ -119,6 +127,7 @@ export function FunctionEntryForm({
         </p>
         <button
           className="studio-primary-button"
+          data-testid="add-function-button"
           disabled={isBusy || !preview || !values.name.trim()}
           onClick={onSubmit}
         >
