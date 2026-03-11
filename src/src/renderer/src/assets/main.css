@@ -131,7 +131,7 @@
 
 @layer components {
   .studio-app-shell {
-    @apply min-h-screen;
+    @apply h-screen overflow-hidden;
   }
 
   .studio-loading-shell {

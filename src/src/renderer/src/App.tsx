@@ -33,7 +33,7 @@ function App(): React.JSX.Element {
 
   return (
     <div className="studio-app-shell" data-testid="fp-studio-app">
-      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-4 px-5 py-5 xl:grid xl:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-4 overflow-hidden px-5 py-5 xl:grid xl:grid-cols-[340px_minmax(0,1fr)]">
         <ProjectSidebar
           isBusy={isBusy}
           projectDescription={projectForm.values.description}
@@ -46,7 +46,7 @@ function App(): React.JSX.Element {
           onSelectProject={actions.selectProject}
         />
 
-        <main className="flex min-h-0 flex-col gap-4">
+        <main className="flex min-h-0 flex-col gap-4 overflow-hidden">
           {errorMessage ? (
             <div className="studio-error-banner" data-testid="app-error-message">
               {errorMessage}
@@ -62,7 +62,7 @@ function App(): React.JSX.Element {
           />
 
           {selectedProject ? (
-            <div className="space-y-4">
+            <div className="flex min-h-0 flex-col gap-4 overflow-hidden">
               <ProjectSummaryCards project={selectedProject} />
               <FunctionEntryForm
                 canSubmit={entryForm.canSubmit}

@@ -36,20 +36,20 @@ export function FunctionEntryForm({
   onSubmit
 }: FunctionEntryFormProps): React.JSX.Element {
   return (
-    <section className="studio-panel px-6 py-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <h3 className="studio-text-primary text-xl font-semibold tracking-tight">
+    <section className="studio-panel px-5 py-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <h3 className="studio-text-primary text-lg font-semibold tracking-tight">
           {isEditing ? `${projectName} の機能を編集` : `${projectName} に機能を追加`}
         </h3>
 
-        <div className="studio-preview" data-testid="function-preview">
-          <p className="studio-text-primary text-lg font-semibold">
+        <div className="studio-preview px-3.5 py-2.5" data-testid="function-preview">
+          <p className="studio-text-primary text-base font-semibold">
             {preview ? `${preview.difficulty} / ${preview.functionPoints} FP` : '入力待ち'}
           </p>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-5">
         <label className="space-y-2 xl:col-span-2">
           <span className="studio-input-label">機能名</span>
           <input
@@ -104,20 +104,20 @@ export function FunctionEntryForm({
         </label>
       </div>
 
-      <label className="mt-4 block space-y-2">
+      <label className="mt-3 block space-y-2">
         <span className="studio-input-label">備考</span>
         <textarea
           className="studio-textarea"
           data-testid="function-note-input"
           disabled={isBusy}
-          rows={3}
+          rows={2}
           value={values.note}
           onChange={(event) => onFieldChange('note', event.target.value)}
           placeholder="判断根拠や対象画面などをメモ"
         />
       </label>
 
-      <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="mt-4 flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
         {isEditing ? (
           <button
             className="studio-secondary-button"
