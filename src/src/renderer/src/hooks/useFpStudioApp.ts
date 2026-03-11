@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { ProjectDetail, ProjectSummary, StudioSettings } from '@shared/fp'
+import type { FunctionEntry, ProjectDetail, ProjectSummary, StudioSettings } from '@shared/fp'
 
 import { useFunctionEntryForm } from './useFunctionEntryForm'
 import { useProjectForm } from './useProjectForm'
@@ -21,7 +21,9 @@ interface UseFpStudioAppResult {
     createProject: () => void
     selectProject: (projectId: string) => void
     deleteProject: (projectId: string) => void
-    createFunctionEntry: () => void
+    submitFunctionEntry: () => void
+    startEditingFunctionEntry: (entry: FunctionEntry) => void
+    cancelEditingFunctionEntry: () => void
     deleteFunctionEntry: (entryId: string) => void
     updateSettings: () => void
   }
@@ -124,20 +126,22 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     void runAction(async () => {
       const detail = await window.fpStudio.createProject(projectForm.values)
       projectForm.reset()
+      entryForm.reset()
       setSelectedProject(detail)
       setSelectedProjectId(detail.id)
       await refreshProjects(detail.id)
     })
-  }, [projectForm, refreshProjects, runAction])
+  }, [entryForm, projectForm, refreshProjects, runAction])
 
   const selectProject = useCallback(
     (projectId: string) => {
       void runAction(async () => {
+        entryForm.reset()
         setSelectedProjectId(projectId)
         await loadProjectDetail(projectId)
       })
     },
-    [loadProjectDetail, runAction]
+    [entryForm, loadProjectDetail, runAction]
   )
 
   const deleteProject = useCallback(
@@ -147,32 +151,50 @@ export function useFpStudioApp(): UseFpStudioAppResult {
         const remainingProjects = projects.filter((project) => project.id !== projectId)
         const nextSelectedProjectId =
           selectedProjectId === projectId ? (remainingProjects[0]?.id ?? null) : selectedProjectId
+        entryForm.reset()
         await refreshProjects(nextSelectedProjectId)
       })
     },
-    [projects, refreshProjects, runAction, selectedProjectId]
+    [entryForm, projects, refreshProjects, runAction, selectedProjectId]
   )
 
-  const createFunctionEntry = useCallback(() => {
+  const submitFunctionEntry = useCallback(() => {
     if (!selectedProjectId) {
       return
     }
 
     void runAction(async () => {
-      const detail = await window.fpStudio.createFunctionEntry({
+      const input = {
         projectId: selectedProjectId,
         name: entryForm.values.name,
         functionType: entryForm.values.functionType,
         det: Number(entryForm.values.det),
         referenceCount: Number(entryForm.values.referenceCount),
         note: entryForm.values.note
-      })
+      }
+      const detail = entryForm.editingEntryId
+        ? await window.fpStudio.updateFunctionEntry({
+            entryId: entryForm.editingEntryId,
+            ...input
+          })
+        : await window.fpStudio.createFunctionEntry(input)
 
       entryForm.reset()
       setSelectedProject(detail)
       await refreshProjects(selectedProjectId)
     })
   }, [entryForm, refreshProjects, runAction, selectedProjectId])
+
+  const startEditingFunctionEntry = useCallback(
+    (entry: FunctionEntry) => {
+      entryForm.startEditing(entry)
+    },
+    [entryForm]
+  )
+
+  const cancelEditingFunctionEntry = useCallback(() => {
+    entryForm.cancelEditing()
+  }, [entryForm])
 
   const deleteFunctionEntry = useCallback(
     (entryId: string) => {
@@ -186,11 +208,14 @@ export function useFpStudioApp(): UseFpStudioAppResult {
           entryId
         })
 
+        if (entryForm.editingEntryId === entryId) {
+          entryForm.reset()
+        }
         setSelectedProject(detail)
         await refreshProjects(selectedProjectId)
       })
     },
-    [refreshProjects, runAction, selectedProjectId]
+    [entryForm, refreshProjects, runAction, selectedProjectId]
   )
 
   const updateSettings = useCallback(() => {
@@ -220,7 +245,9 @@ export function useFpStudioApp(): UseFpStudioAppResult {
       createProject,
       selectProject,
       deleteProject,
-      createFunctionEntry,
+      submitFunctionEntry,
+      startEditingFunctionEntry,
+      cancelEditingFunctionEntry,
       deleteFunctionEntry,
       updateSettings
     }

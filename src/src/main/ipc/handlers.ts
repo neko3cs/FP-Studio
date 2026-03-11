@@ -7,6 +7,7 @@ import type {
   ProjectDetail,
   ProjectSummary,
   StudioSettings,
+  UpdateFunctionEntryInput,
   UpdateSettingsInput
 } from '@shared/fp'
 
@@ -18,6 +19,7 @@ export interface StudioIpcHandlers {
   createProject: (input: CreateProjectInput) => Promise<ProjectDetail>
   deleteProject: (input: DeleteProjectInput) => Promise<void>
   createFunctionEntry: (input: CreateFunctionEntryInput) => Promise<ProjectDetail>
+  updateFunctionEntry: (input: UpdateFunctionEntryInput) => Promise<ProjectDetail>
   deleteFunctionEntry: (input: DeleteFunctionEntryInput) => Promise<ProjectDetail>
   getSettings: () => Promise<StudioSettings>
   updateSettings: (input: UpdateSettingsInput) => Promise<StudioSettings>
@@ -30,6 +32,7 @@ export function createStudioIpcHandlers(service: StudioService): StudioIpcHandle
     createProject: async (input) => service.createProject(input),
     deleteProject: async (input) => service.deleteProject(input.projectId),
     createFunctionEntry: async (input) => service.createFunctionEntry(input),
+    updateFunctionEntry: async (input) => service.updateFunctionEntry(input),
     deleteFunctionEntry: async (input) => service.deleteFunctionEntry(input),
     getSettings: async () => service.getSettings(),
     updateSettings: async (input) => service.updateSettings(input)

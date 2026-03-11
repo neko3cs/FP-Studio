@@ -119,6 +119,51 @@ test.describe('FP Studio business scenarios', () => {
     }
   })
 
+  test('登録済み機能を編集できる', async () => {
+    const appDataRoot = await createAppDataRoot()
+    const app = await launchStudioApp(appDataRoot)
+
+    try {
+      await createProject(app.page, '営業支援システム', '案件管理と商談照会')
+      await addFunctionEntry(app.page, {
+        name: '商談照会',
+        functionType: 'EQ',
+        det: '8',
+        referenceCount: '2',
+        note: '一覧検索',
+        expectedPreview: 'Average / 4 FP'
+      })
+
+      await expect(app.page.getByTestId('summary-total-ufp')).toHaveText('4')
+      await app.page.getByRole('button', { name: '商談照会 を編集' }).click()
+      await expect(
+        app.page.getByRole('heading', { name: '営業支援システム の機能を編集' })
+      ).toBeVisible()
+
+      await app.page.getByTestId('function-name-input').fill('商談詳細照会')
+      await app.page.getByTestId('function-type-select').selectOption('EO')
+      await app.page.getByTestId('det-input').fill('25')
+      await app.page.getByTestId('reference-count-input').fill('4')
+      await app.page.getByTestId('function-note-input').fill('詳細画面と履歴表示')
+      await expect(app.page.getByTestId('function-preview')).toContainText('High / 7 FP')
+      await app.page.getByTestId('add-function-button').click()
+
+      await expect(app.page.getByTestId('summary-total-ufp')).toHaveText('7')
+      await expect(
+        app.page.getByTestId('function-entry-table-body').getByText('商談詳細照会')
+      ).toBeVisible()
+      await expect(
+        app.page.getByTestId('function-entry-table-body').getByText('商談照会')
+      ).toHaveCount(0)
+      await expect(app.page.getByTestId('function-entry-table-body')).toContainText(
+        '詳細画面と履歴表示'
+      )
+    } finally {
+      await closeStudioApp(app)
+      await removeAppDataRoot(appDataRoot)
+    }
+  })
+
   test('機能とプロジェクトを削除できる', async () => {
     const appDataRoot = await createAppDataRoot()
     const app = await launchStudioApp(appDataRoot)

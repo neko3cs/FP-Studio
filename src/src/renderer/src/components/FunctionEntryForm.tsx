@@ -11,12 +11,15 @@ interface FunctionEntryFormProps {
     note: string
   }
   preview: FunctionPointAnalysis | null
+  canSubmit: boolean
+  isEditing: boolean
   referenceLabel: 'FTR' | 'RET'
   isBusy: boolean
   onFieldChange: (
     field: 'name' | 'functionType' | 'det' | 'referenceCount' | 'note',
     value: string
   ) => void
+  onCancel: () => void
   onSubmit: () => void
 }
 
@@ -24,16 +27,19 @@ export function FunctionEntryForm({
   projectName,
   values,
   preview,
+  canSubmit,
+  isEditing,
   referenceLabel,
   isBusy,
   onFieldChange,
+  onCancel,
   onSubmit
 }: FunctionEntryFormProps): React.JSX.Element {
   return (
     <section className="studio-panel px-6 py-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <h3 className="studio-text-primary text-xl font-semibold tracking-tight">
-          {projectName} に機能を追加
+          {isEditing ? `${projectName} の機能を編集` : `${projectName} に機能を追加`}
         </h3>
 
         <div className="studio-preview" data-testid="function-preview">
@@ -112,13 +118,26 @@ export function FunctionEntryForm({
       </label>
 
       <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        {isEditing ? (
+          <button
+            className="studio-secondary-button"
+            data-testid="cancel-edit-button"
+            disabled={isBusy}
+            onClick={onCancel}
+            type="button"
+          >
+            編集をキャンセル
+          </button>
+        ) : (
+          <div />
+        )}
         <button
           className="studio-primary-button md:ml-auto"
           data-testid="add-function-button"
-          disabled={isBusy || !preview || !values.name.trim()}
+          disabled={isBusy || !canSubmit}
           onClick={onSubmit}
         >
-          機能を追加
+          {isEditing ? '変更を保存' : '機能を追加'}
         </button>
       </div>
     </section>

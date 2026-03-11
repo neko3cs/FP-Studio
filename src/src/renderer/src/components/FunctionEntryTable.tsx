@@ -3,6 +3,7 @@ import type { FunctionEntry } from '@shared/fp'
 interface FunctionEntryTableProps {
   entries: FunctionEntry[]
   isBusy: boolean
+  onEditEntry: (entry: FunctionEntry) => void
   onDeleteEntry: (entryId: string) => void
 }
 
@@ -15,6 +16,7 @@ const difficultyClassName: Record<FunctionEntry['difficulty'], string> = {
 export function FunctionEntryTable({
   entries,
   isBusy,
+  onEditEntry,
   onDeleteEntry
 }: FunctionEntryTableProps): React.JSX.Element {
   if (entries.length === 0) {
@@ -72,15 +74,27 @@ export function FunctionEntryTable({
                 <td className="studio-text-primary px-4 py-4 font-semibold">
                   {entry.functionPoints}
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    aria-label={`${entry.name} を削除`}
-                    className="studio-danger-button"
-                    disabled={isBusy}
-                    onClick={() => onDeleteEntry(entry.id)}
-                  >
-                    削除
-                  </button>
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      aria-label={`${entry.name} を編集`}
+                      className="studio-text-secondary text-xs font-medium transition hover:opacity-80"
+                      disabled={isBusy}
+                      onClick={() => onEditEntry(entry)}
+                      type="button"
+                    >
+                      編集
+                    </button>
+                    <button
+                      aria-label={`${entry.name} を削除`}
+                      className="studio-danger-button"
+                      disabled={isBusy}
+                      onClick={() => onDeleteEntry(entry.id)}
+                      type="button"
+                    >
+                      削除
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
