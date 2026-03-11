@@ -11,7 +11,6 @@ function App(): React.JSX.Element {
     projects,
     selectedProject,
     selectedProjectId,
-    settings,
     projectForm,
     entryForm,
     settingsForm,
@@ -23,20 +22,18 @@ function App(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-100">
-        <div className="rounded-3xl border border-slate-800 bg-slate-900 px-8 py-6 text-center shadow-panel">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-400">
-            FP Studio
-          </p>
-          <p className="mt-3 text-lg font-medium text-white">ローカルデータを読み込んでいます…</p>
+      <div className="studio-loading-shell">
+        <div className="studio-panel px-8 py-6 text-center">
+          <p className="studio-text-secondary text-sm font-medium">FP Studio</p>
+          <p className="studio-text-primary mt-2 text-base">ローカルデータを読み込んでいます…</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100" data-testid="fp-studio-app">
-      <div className="mx-auto flex min-h-screen max-w-[1680px] flex-col gap-6 px-6 py-6 xl:grid xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="studio-app-shell" data-testid="fp-studio-app">
+      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-4 px-5 py-5 xl:grid xl:grid-cols-[340px_minmax(0,1fr)]">
         <ProjectSidebar
           isBusy={isBusy}
           projectDescription={projectForm.values.description}
@@ -49,25 +46,9 @@ function App(): React.JSX.Element {
           onSelectProject={actions.selectProject}
         />
 
-        <main className="flex min-h-0 flex-col gap-6">
-          <header className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-panel">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-400">
-              Estimate, purely.
-            </p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">
-              IPA/IFPUG 準拠の FP 見積をローカル完結で。
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-400">
-              プロジェクト、機能、UFP、生産性を一画面で管理します。SQLite は OS
-              ごとのアプリケーションデータ配下へ保存されます。
-            </p>
-          </header>
-
+        <main className="flex min-h-0 flex-col gap-4">
           {errorMessage ? (
-            <div
-              className="rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100"
-              data-testid="app-error-message"
-            >
+            <div className="studio-error-banner" data-testid="app-error-message">
               {errorMessage}
             </div>
           ) : null}
@@ -81,8 +62,8 @@ function App(): React.JSX.Element {
           />
 
           {selectedProject ? (
-            <div className="space-y-6">
-              <ProjectSummaryCards project={selectedProject} settings={settings} />
+            <div className="space-y-4">
+              <ProjectSummaryCards project={selectedProject} />
               <FunctionEntryForm
                 isBusy={isBusy}
                 preview={entryForm.preview}
