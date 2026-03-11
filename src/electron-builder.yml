@@ -1,5 +1,5 @@
-appId: com.electron.app
-productName: fp-studio
+appId: com.fpstudio.app
+productName: FP Studio
 directories:
   buildResources: build
 files:

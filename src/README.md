@@ -1,34 +1,49 @@
-# fp-studio
+# FP Studio
 
-An Electron application with React and TypeScript
+FP Studio は、IPA/IFPUG 準拠の UFP 計測をローカル完結で行う Electron デスクトップアプリケーションです。
 
-## Recommended IDE Setup
+## 主な機能
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+- プロジェクトの作成、一覧表示、削除
+- EI / EO / EQ / ILF / EIF の Function Type に対応した FP 計測
+- DET と FTR / RET 入力による難易度自動判定
+- 合計 UFP と概算工数のリアルタイム表示
+- SQLite によるローカル永続化
 
-## Project Setup
-
-### Install
+## セットアップ
 
 ```bash
-$ pnpm install
+pnpm install
 ```
 
-### Development
+`better-sqlite3` は Electron 向けネイティブモジュールのため、`pnpm dev` / `pnpm start` 実行時に自動で Electron ABI 向け再構築が走ります。
+
+アプリのユーザーデータと SQLite は、macOS では `~/Library/Application Support/FP Studio/` に保存されます。
+
+## 開発
 
 ```bash
-$ pnpm dev
+pnpm dev
 ```
 
-### Build
+もし `NODE_MODULE_VERSION` の不一致が出た場合は、以下を実行してから再起動してください。
 
 ```bash
-# For windows
-$ pnpm build:win
+pnpm run native:electron
+```
 
-# For macOS
-$ pnpm build:mac
+## 検証
 
-# For Linux
-$ pnpm build:linux
+```bash
+pnpm lint
+pnpm test
+pnpm build
+```
+
+## 配布ビルド
+
+```bash
+pnpm build:mac
+pnpm build:win
+pnpm build:linux
 ```
