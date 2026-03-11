@@ -36,12 +36,12 @@ export function FunctionEntryTable({
   }
 
   return (
-    <section className="studio-panel overflow-visible">
+    <section className="studio-panel flex min-h-0 flex-col overflow-visible">
       <div className="studio-divider border-b px-6 py-4">
         <h3 className="studio-text-primary text-lg font-semibold">登録済み機能</h3>
       </div>
 
-      <div className="overflow-x-auto overflow-y-visible">
+      <div className="min-h-0 flex-1 overflow-auto">
         <table className="studio-table">
           <thead className="text-left text-xs">
             <tr>
