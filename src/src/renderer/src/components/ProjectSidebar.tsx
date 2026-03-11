@@ -1,3 +1,25 @@
+import {
+  Badge,
+  Body1Strong,
+  Body2,
+  Button,
+  Caption1,
+  Card,
+  Dialog,
+  DialogActions,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  DialogTitle,
+  Field,
+  Input,
+  makeStyles,
+  mergeClasses,
+  Textarea,
+  tokens
+} from '@fluentui/react-components'
+import { useState } from 'react'
+
 import type { ProjectSummary } from '@shared/fp'
 
 interface ProjectSidebarProps {
@@ -12,6 +34,112 @@ interface ProjectSidebarProps {
   onDeleteProject: (projectId: string) => void
 }
 
+const useStyles = makeStyles({
+  root: {
+    height: '100%',
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalL,
+    padding: tokens.spacingHorizontalL
+  },
+  formCard: {
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    padding: tokens.spacingHorizontalL
+  },
+  listHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  listSection: {
+    minHeight: 0,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    overflow: 'hidden'
+  },
+  list: {
+    minHeight: 0,
+    flex: 1,
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalM,
+    paddingRight: tokens.spacingHorizontalXS
+  },
+  emptyCard: {
+    padding: tokens.spacingHorizontalL,
+    textAlign: 'left'
+  },
+  projectCard: {
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: tokens.spacingVerticalS,
+    padding: tokens.spacingHorizontalL,
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+    cursor: 'default'
+  },
+  projectCardSelected: {
+    backgroundColor: tokens.colorBrandBackground2,
+    border: `1px solid ${tokens.colorBrandStroke2}`
+  },
+  selectButton: {
+    width: '100%',
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    paddingTop: '0',
+    paddingRight: '0',
+    paddingBottom: '0',
+    paddingLeft: '0',
+    backgroundColor: 'transparent'
+  },
+  projectHeader: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalM,
+    textAlign: 'left'
+  },
+  projectInfo: {
+    minWidth: 0,
+    flex: 1
+  },
+  projectDescription: {
+    marginTop: tokens.spacingVerticalXS,
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: '2',
+    overflow: 'hidden'
+  },
+  projectMeta: {
+    marginTop: tokens.spacingVerticalS,
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: tokens.spacingHorizontalS
+  },
+  totalBadge: {
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+    alignSelf: 'flex-start'
+  },
+  deleteButton: {
+    justifyContent: 'flex-start',
+    paddingLeft: '0',
+    color: tokens.colorPaletteRedForeground2
+  },
+  dialogContent: {
+    whiteSpace: 'pre-wrap',
+    overflowWrap: 'anywhere'
+  }
+})
+
 export function ProjectSidebar({
   projects,
   selectedProjectId,
@@ -23,93 +151,153 @@ export function ProjectSidebar({
   onSelectProject,
   onDeleteProject
 }: ProjectSidebarProps): React.JSX.Element {
+  const styles = useStyles()
+  const [projectPendingDeletion, setProjectPendingDeletion] = useState<ProjectSummary | null>(null)
+
+  const closeDeleteDialog = (): void => {
+    setProjectPendingDeletion(null)
+  }
+
+  const confirmDeleteProject = (): void => {
+    if (!projectPendingDeletion) {
+      return
+    }
+
+    onDeleteProject(projectPendingDeletion.id)
+    closeDeleteDialog()
+  }
+
   return (
-    <aside className="studio-panel flex h-full min-h-0 flex-col gap-4 p-4">
-      <div className="studio-panel-muted space-y-3 p-3.5">
-        <label className="block space-y-2">
-          <span className="studio-input-label">プロジェクト名</span>
-          <input
-            className="studio-input"
+    <Card appearance="filled-alternative" className={styles.root}>
+      <Card appearance="outline" className={styles.formCard}>
+        <Field label="プロジェクト名">
+          <Input
             data-testid="project-name-input"
             disabled={isBusy}
-            value={projectName}
-            onChange={(event) => onProjectFieldChange('name', event.target.value)}
             placeholder="例: 販売管理システム刷新"
+            value={projectName}
+            onChange={(_, data) => onProjectFieldChange('name', data.value)}
           />
-        </label>
+        </Field>
 
-        <label className="block space-y-2">
-          <span className="studio-input-label">説明</span>
-          <textarea
-            className="studio-textarea"
+        <Field label="説明">
+          <Textarea
             data-testid="project-description-input"
             disabled={isBusy}
+            placeholder="対象業務や前提条件をひとことメモ"
+            resize="vertical"
             rows={2}
             value={projectDescription}
-            onChange={(event) => onProjectFieldChange('description', event.target.value)}
-            placeholder="対象業務や前提条件をひとことメモ"
+            onChange={(_, data) => onProjectFieldChange('description', data.value)}
           />
-        </label>
+        </Field>
 
-        <button
-          className="studio-primary-button w-full"
+        <Button
+          appearance="primary"
           data-testid="create-project-button"
           disabled={isBusy || !projectName.trim()}
           onClick={onCreateProject}
         >
           プロジェクトを作成
-        </button>
-      </div>
+        </Button>
+      </Card>
 
-      <div className="flex items-center justify-between">
-        <h2 className="studio-text-secondary text-sm font-medium">プロジェクト</h2>
-        <span className="studio-text-tertiary text-sm">{projects.length}件</span>
-      </div>
+      <div className={styles.listSection}>
+        <div className={styles.listHeader}>
+          <Body2>プロジェクト</Body2>
+          <Caption1>{projects.length}件</Caption1>
+        </div>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1" data-testid="project-list">
-        {projects.length === 0 ? (
-          <div className="studio-empty-state rounded-2xl p-4 text-left">
-            まだプロジェクトがありません。まずは左上から1件作成してください。
-          </div>
-        ) : (
-          projects.map((project) => {
-            const isSelected = project.id === selectedProjectId
+        <div className={styles.list} data-testid="project-list">
+          {projects.length === 0 ? (
+            <Card appearance="subtle" className={styles.emptyCard}>
+              <Body2>まだプロジェクトがありません。まずは左上から1件作成してください。</Body2>
+            </Card>
+          ) : (
+            projects.map((project) => {
+              const isSelected = project.id === selectedProjectId
 
-            return (
-              <div
-                key={project.id}
-                className={`studio-card ${isSelected ? 'studio-card-selected' : ''}`}
-                data-testid={`project-card-${project.id}`}
-              >
-                <button className="w-full text-left" onClick={() => onSelectProject(project.id)}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="studio-text-primary text-[15px] font-medium">{project.name}</p>
-                      <p className="studio-text-secondary mt-1 text-sm">
-                        {project.description || '説明なし'}
-                      </p>
-                    </div>
-                    <span className="studio-chip">{project.totalFunctionPoints} UFP</span>
-                  </div>
-                  <div className="studio-text-tertiary mt-3 flex items-center gap-3 text-xs">
-                    <span>{project.functionCount} 機能</span>
-                    <span>{project.estimatedEffortDays} 人日</span>
-                  </div>
-                </button>
-
-                <button
-                  aria-label={`${project.name} プロジェクトを削除`}
-                  className="studio-danger-button mt-3"
-                  disabled={isBusy}
-                  onClick={() => onDeleteProject(project.id)}
+              return (
+                <Card
+                  key={project.id}
+                  appearance={isSelected ? 'filled' : 'outline'}
+                  className={mergeClasses(
+                    styles.projectCard,
+                    isSelected && styles.projectCardSelected
+                  )}
+                  data-testid={`project-card-${project.id}`}
                 >
-                  このプロジェクトを削除
-                </button>
-              </div>
-            )
-          })
-        )}
+                  <Button
+                    appearance="subtle"
+                    className={styles.selectButton}
+                    onClick={() => onSelectProject(project.id)}
+                  >
+                    <div className={styles.projectHeader}>
+                      <div className={styles.projectInfo}>
+                        <Body1Strong>{project.name}</Body1Strong>
+                        <Body2 className={styles.projectDescription}>
+                          {project.description || '説明なし'}
+                        </Body2>
+                      </div>
+                      <Badge
+                        appearance="tint"
+                        className={styles.totalBadge}
+                        color="informative"
+                        shape="rounded"
+                      >
+                        {project.totalFunctionPoints} UFP
+                      </Badge>
+                    </div>
+                  </Button>
+
+                  <div className={styles.projectMeta}>
+                    <Caption1>{project.functionCount} 機能</Caption1>
+                    <Caption1>{project.estimatedEffortDays} 人日</Caption1>
+                  </div>
+
+                  <Button
+                    aria-label={`${project.name} プロジェクトを削除`}
+                    appearance="subtle"
+                    className={styles.deleteButton}
+                    disabled={isBusy}
+                    onClick={() => setProjectPendingDeletion(project)}
+                  >
+                    このプロジェクトを削除
+                  </Button>
+                </Card>
+              )
+            })
+          )}
+        </div>
       </div>
-    </aside>
+
+      <Dialog
+        open={projectPendingDeletion !== null}
+        onOpenChange={(_event, data) => {
+          if (!data.open) {
+            closeDeleteDialog()
+          }
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>プロジェクトを削除しますか？</DialogTitle>
+            <DialogContent className={styles.dialogContent}>
+              {projectPendingDeletion
+                ? `「${projectPendingDeletion.name}」を削除します。この操作は元に戻せません。`
+                : ''}
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={closeDeleteDialog}>
+                キャンセル
+              </Button>
+              <Button appearance="primary" disabled={isBusy} onClick={confirmDeleteProject}>
+                削除する
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </Card>
   )
 }
