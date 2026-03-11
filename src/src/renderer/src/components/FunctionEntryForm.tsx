@@ -30,32 +30,22 @@ export function FunctionEntryForm({
   onSubmit
 }: FunctionEntryFormProps): React.JSX.Element {
   return (
-    <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-panel">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-brand-400">
-            Function Point
-          </p>
-          <h3 className="mt-1 text-2xl font-semibold text-white">{projectName} に機能を追加</h3>
-          <p className="mt-1 text-sm text-slate-400">
-            Function Type と DET / {referenceLabel} を入れると難易度と FP を即時計算します。
-          </p>
-        </div>
+    <section className="studio-panel px-6 py-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <h3 className="studio-text-primary text-xl font-semibold tracking-tight">
+          {projectName} に機能を追加
+        </h3>
 
-        <div
-          className="rounded-2xl border border-brand-500/30 bg-brand-500/10 px-4 py-3 text-right"
-          data-testid="function-preview"
-        >
-          <p className="text-xs font-medium uppercase tracking-[0.24em] text-brand-200">Preview</p>
-          <p className="mt-1 text-xl font-semibold text-white">
+        <div className="studio-preview" data-testid="function-preview">
+          <p className="studio-text-primary text-lg font-semibold">
             {preview ? `${preview.difficulty} / ${preview.functionPoints} FP` : '入力待ち'}
           </p>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-5">
         <label className="space-y-2 xl:col-span-2">
-          <span className="text-sm font-medium text-slate-200">機能名</span>
+          <span className="studio-input-label">機能名</span>
           <input
             className="studio-input"
             data-testid="function-name-input"
@@ -67,7 +57,7 @@ export function FunctionEntryForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-200">Function Type</span>
+          <span className="studio-input-label">Function Type</span>
           <select
             className="studio-input"
             data-testid="function-type-select"
@@ -84,7 +74,7 @@ export function FunctionEntryForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-200">DET</span>
+          <span className="studio-input-label">DET</span>
           <input
             className="studio-input"
             data-testid="det-input"
@@ -96,7 +86,7 @@ export function FunctionEntryForm({
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-slate-200">{referenceLabel}</span>
+          <span className="studio-input-label">{referenceLabel}</span>
           <input
             className="studio-input"
             data-testid="reference-count-input"
@@ -109,7 +99,7 @@ export function FunctionEntryForm({
       </div>
 
       <label className="mt-4 block space-y-2">
-        <span className="text-sm font-medium text-slate-200">備考</span>
+        <span className="studio-input-label">備考</span>
         <textarea
           className="studio-textarea"
           data-testid="function-note-input"
@@ -122,11 +112,8 @@ export function FunctionEntryForm({
       </label>
 
       <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <p className="text-sm text-slate-400">
-          標準重みを適用し、合計 UFP と概算工数に即時反映します。
-        </p>
         <button
-          className="studio-primary-button"
+          className="studio-primary-button md:ml-auto"
           data-testid="add-function-button"
           disabled={isBusy || !preview || !values.name.trim()}
           onClick={onSubmit}
