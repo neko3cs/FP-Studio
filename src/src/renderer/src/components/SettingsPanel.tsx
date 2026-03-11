@@ -26,6 +26,7 @@ export function SettingsPanel({
           <span className="text-sm font-medium text-slate-200">デフォルト生産性 (人日 / FP)</span>
           <input
             className="studio-input"
+            data-testid="settings-productivity-input"
             disabled={isBusy}
             inputMode="decimal"
             value={defaultProductivity}
@@ -35,6 +36,7 @@ export function SettingsPanel({
 
         <button
           className="studio-secondary-button"
+          data-testid="settings-save-button"
           disabled={isBusy || !canSubmit}
           onClick={onSubmit}
         >

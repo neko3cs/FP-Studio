@@ -1,6 +1,7 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { mkdirSync } from 'fs'
 import { join } from 'path'
 
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { electronApp, is, optimizer } from '@electron-toolkit/utils'
 
 import {
@@ -19,6 +20,13 @@ let mainWindow: BrowserWindow | null = null
 let closeDatabase: (() => void) | null = null
 
 app.setName(STUDIO_APP_DIRECTORY_NAME)
+
+const configuredAppDataPath = process.env.FP_STUDIO_APP_DATA_PATH
+
+if (configuredAppDataPath) {
+  mkdirSync(configuredAppDataPath, { recursive: true })
+  app.setPath('appData', configuredAppDataPath)
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
