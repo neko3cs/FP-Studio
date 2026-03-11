@@ -44,4 +44,42 @@ describe('useFunctionEntryForm', () => {
     expect(result.current.preview).toBeNull()
     expect(result.current.canSubmit).toBe(false)
   })
+
+  it('既存エントリを編集状態に読み込み、キャンセルで初期化できる', () => {
+    const { result } = renderHook(() => useFunctionEntryForm())
+
+    act(() => {
+      result.current.startEditing({
+        id: 'entry-1',
+        projectId: 'project-1',
+        name: '顧客照会',
+        functionType: 'EQ',
+        det: 8,
+        referenceCount: 2,
+        difficulty: 'Average',
+        functionPoints: 4,
+        note: '既存機能',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z'
+      })
+    })
+
+    expect(result.current.isEditing).toBe(true)
+    expect(result.current.editingEntryId).toBe('entry-1')
+    expect(result.current.values).toMatchObject({
+      name: '顧客照会',
+      functionType: 'EQ',
+      det: '8',
+      referenceCount: '2',
+      note: '既存機能'
+    })
+
+    act(() => {
+      result.current.cancelEditing()
+    })
+
+    expect(result.current.isEditing).toBe(false)
+    expect(result.current.editingEntryId).toBeNull()
+    expect(result.current.values.name).toBe('')
+  })
 })

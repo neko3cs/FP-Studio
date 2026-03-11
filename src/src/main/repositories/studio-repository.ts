@@ -20,6 +20,7 @@ export interface StudioRepository {
   deleteProject: (projectId: string) => void
   listFunctionEntries: (projectId: string) => FunctionEntryRecord[]
   createFunctionEntry: (entry: FunctionEntryRecord) => void
+  updateFunctionEntry: (entry: FunctionEntryRecord) => void
   deleteFunctionEntry: (entryId: string) => void
   getSettings: () => StudioSettings
   setDefaultProductivity: (value: number) => void
@@ -69,6 +70,21 @@ export function createStudioRepository(databaseContext: DatabaseContext): Studio
         .map(normalizeFunctionEntryRecord),
     createFunctionEntry: (entry) => {
       db.insert(functionEntriesTable).values(entry).run()
+    },
+    updateFunctionEntry: (entry) => {
+      db.update(functionEntriesTable)
+        .set({
+          name: entry.name,
+          functionType: entry.functionType,
+          det: entry.det,
+          referenceCount: entry.referenceCount,
+          difficulty: entry.difficulty,
+          functionPoints: entry.functionPoints,
+          note: entry.note,
+          updatedAt: entry.updatedAt
+        })
+        .where(eq(functionEntriesTable.id, entry.id))
+        .run()
     },
     deleteFunctionEntry: (entryId) => {
       db.delete(functionEntriesTable).where(eq(functionEntriesTable.id, entryId)).run()

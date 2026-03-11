@@ -65,17 +65,21 @@ function App(): React.JSX.Element {
             <div className="space-y-4">
               <ProjectSummaryCards project={selectedProject} />
               <FunctionEntryForm
+                canSubmit={entryForm.canSubmit}
                 isBusy={isBusy}
+                isEditing={entryForm.isEditing}
+                onCancel={actions.cancelEditingFunctionEntry}
                 preview={entryForm.preview}
                 projectName={selectedProject.name}
                 referenceLabel={entryForm.referenceLabel}
                 values={entryForm.values}
                 onFieldChange={entryForm.updateField}
-                onSubmit={actions.createFunctionEntry}
+                onSubmit={actions.submitFunctionEntry}
               />
               <FunctionEntryTable
                 entries={selectedProject.entries}
                 isBusy={isBusy}
+                onEditEntry={actions.startEditingFunctionEntry}
                 onDeleteEntry={actions.deleteFunctionEntry}
               />
             </div>

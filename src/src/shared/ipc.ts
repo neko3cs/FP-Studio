@@ -7,6 +7,7 @@ import type {
   ProjectDetail,
   ProjectSummary,
   StudioSettings,
+  UpdateFunctionEntryInput,
   UpdateSettingsInput
 } from './fp'
 
@@ -16,6 +17,7 @@ export const STUDIO_CHANNELS = {
   createProject: 'studio:create-project',
   deleteProject: 'studio:delete-project',
   createFunctionEntry: 'studio:create-function-entry',
+  updateFunctionEntry: 'studio:update-function-entry',
   deleteFunctionEntry: 'studio:delete-function-entry',
   getSettings: 'studio:get-settings',
   updateSettings: 'studio:update-settings'
@@ -27,6 +29,7 @@ export interface StudioApi {
   createProject: (input: CreateProjectInput) => Promise<ProjectDetail>
   deleteProject: (input: DeleteProjectInput) => Promise<void>
   createFunctionEntry: (input: CreateFunctionEntryInput) => Promise<ProjectDetail>
+  updateFunctionEntry: (input: UpdateFunctionEntryInput) => Promise<ProjectDetail>
   deleteFunctionEntry: (input: DeleteFunctionEntryInput) => Promise<ProjectDetail>
   getSettings: () => Promise<StudioSettings>
   updateSettings: (input: UpdateSettingsInput) => Promise<StudioSettings>
