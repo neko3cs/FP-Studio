@@ -38,6 +38,7 @@ export function ProjectSidebar({
           <span className="text-sm font-medium text-slate-200">プロジェクト名</span>
           <input
             className="studio-input"
+            data-testid="project-name-input"
             disabled={isBusy}
             value={projectName}
             onChange={(event) => onProjectFieldChange('name', event.target.value)}
@@ -49,6 +50,7 @@ export function ProjectSidebar({
           <span className="text-sm font-medium text-slate-200">説明</span>
           <textarea
             className="studio-textarea"
+            data-testid="project-description-input"
             disabled={isBusy}
             rows={3}
             value={projectDescription}
@@ -59,6 +61,7 @@ export function ProjectSidebar({
 
         <button
           className="studio-primary-button w-full"
+          data-testid="create-project-button"
           disabled={isBusy || !projectName.trim()}
           onClick={onCreateProject}
         >
@@ -66,7 +69,7 @@ export function ProjectSidebar({
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1" data-testid="project-list">
         {projects.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-700 p-4 text-sm text-slate-400">
             まだプロジェクトがありません。まずは左上から1件作成してください。
@@ -83,6 +86,7 @@ export function ProjectSidebar({
                     ? 'border-brand-400 bg-brand-500/10 shadow-[0_0_0_1px_rgba(56,189,248,0.4)]'
                     : 'border-slate-800 bg-slate-950/60 hover:border-slate-700'
                 }`}
+                data-testid={`project-card-${project.id}`}
               >
                 <button className="w-full text-left" onClick={() => onSelectProject(project.id)}>
                   <div className="flex items-start justify-between gap-3">
@@ -103,6 +107,7 @@ export function ProjectSidebar({
                 </button>
 
                 <button
+                  aria-label={`${project.name} プロジェクトを削除`}
                   className="mt-3 text-xs font-medium text-rose-300 transition hover:text-rose-200"
                   disabled={isBusy}
                   onClick={() => onDeleteProject(project.id)}

@@ -44,9 +44,16 @@ export function FunctionEntryTable({
               <th className="px-6 py-4 text-right">操作</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-800/80 text-slate-200">
+          <tbody
+            className="divide-y divide-slate-800/80 text-slate-200"
+            data-testid="function-entry-table-body"
+          >
             {entries.map((entry) => (
-              <tr key={entry.id} className="bg-slate-900/40">
+              <tr
+                key={entry.id}
+                className="bg-slate-900/40"
+                data-testid={`function-entry-${entry.id}`}
+              >
                 <td className="px-6 py-4">
                   <div>
                     <p className="font-medium text-white">{entry.name}</p>
@@ -66,6 +73,7 @@ export function FunctionEntryTable({
                 <td className="px-4 py-4 font-semibold text-white">{entry.functionPoints}</td>
                 <td className="px-6 py-4 text-right">
                   <button
+                    aria-label={`${entry.name} を削除`}
                     className="text-xs font-medium text-rose-300 transition hover:text-rose-200"
                     disabled={isBusy}
                     onClick={() => onDeleteEntry(entry.id)}
