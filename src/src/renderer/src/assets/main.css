@@ -288,4 +288,24 @@
   .studio-danger-button:hover {
     color: var(--app-danger-hover);
   }
+
+  .studio-tooltip-trigger {
+    @apply relative inline-block max-w-full align-top;
+  }
+
+  .studio-tooltip {
+    @apply pointer-events-none absolute bottom-full left-0 z-50 mb-2 min-w-[36rem] max-w-[64rem] rounded-xl border px-3 py-2 text-xs opacity-0 shadow-lg transition-opacity duration-150;
+    border-color: var(--app-border-strong);
+    background-color: var(--app-panel-bg);
+    color: var(--app-text-primary);
+    transition-delay: 0s;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .studio-tooltip-trigger:hover .studio-tooltip,
+  .studio-tooltip-trigger:focus-within .studio-tooltip {
+    opacity: 1;
+    transition-delay: 1s;
+  }
 }
