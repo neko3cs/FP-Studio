@@ -1,5 +1,9 @@
 import { useCallback, useState } from 'react'
 
+function formatProductivity(value: number): string {
+  return value.toFixed(2)
+}
+
 interface UseSettingsFormResult {
   defaultProductivity: string
   canSubmit: boolean
@@ -8,14 +12,14 @@ interface UseSettingsFormResult {
 }
 
 export function useSettingsForm(initialValue: number): UseSettingsFormResult {
-  const [defaultProductivity, setDefaultProductivity] = useState(String(initialValue))
+  const [defaultProductivity, setDefaultProductivity] = useState(formatProductivity(initialValue))
 
   const updateValue = useCallback((value: string) => {
     setDefaultProductivity(value)
   }, [])
 
   const reset = useCallback((value: number) => {
-    setDefaultProductivity(String(value))
+    setDefaultProductivity(formatProductivity(value))
   }, [])
 
   return {
