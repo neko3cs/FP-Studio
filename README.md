@@ -1,2 +1,11 @@
-# FP-Studio
-The most intuitive way to estimate. Built on IPA standards.
+# FP Studio
+
+## Estimate, purely.
+
+FP Studioは、ソフトウェア開発の規模計測を、もっともシンプルで、もっとも正確な体験へと変えるデスクトップアプリケーションです。
+IPA（情報処理推進機構）の標準的なファンクション・ポイント（FP）法を、洗練されたインターフェースに凝縮しました。
+
+- **Precision.** DETとFTRを入力するだけで、複雑度を自動判定。
+- **Native.** デスクトップならではの軽快なレスポンス。
+- **Private.** 重要な見積もりデータは、ローカルのSQLiteに安全に保存。
+- **Standard.** IPA/IFPUG準拠のロジックを搭載。
