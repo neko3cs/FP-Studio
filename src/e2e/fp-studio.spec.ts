@@ -135,10 +135,13 @@ test.describe('FP Studio business scenarios', () => {
       })
 
       await expect(app.page.getByTestId('summary-total-ufp')).toHaveText('4')
+      await app.page.getByTestId('function-form-accordion-button').click()
+      await expect(app.page.getByTestId('function-name-input')).toHaveCount(0)
       await app.page.getByRole('button', { name: '商談照会 を編集' }).click()
       await expect(
         app.page.getByRole('heading', { name: '営業支援システム の機能を編集' })
       ).toBeVisible()
+      await expect(app.page.getByTestId('function-name-input')).toBeVisible()
 
       await app.page.getByTestId('function-name-input').fill('商談詳細照会')
       await app.page.getByTestId('function-type-select').selectOption('EO')
