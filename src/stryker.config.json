@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "packageManager": "pnpm",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "coverageAnalysis": "perTest",
+  "ignoreStatic": true,
+  "allowEmpty": false,
+  "tempDirName": ".stryker-tmp",
+  "reporters": [
+    "clear-text",
+    "progress",
+    "html"
+  ],
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 60
+  },
+  "mutate": [
+    "src/shared/fp.ts",
+    "src/shared/ipc.ts",
+    "src/main/app-paths.ts",
+    "src/main/ipc/handlers.ts",
+    "src/main/ipc/register-handlers.ts",
+    "src/main/services/studio-service.ts",
+    "src/renderer/src/RendererErrorBoundary.tsx",
+    "src/renderer/src/hooks/useFunctionEntryForm.ts",
+    "src/renderer/src/hooks/useProjectForm.ts",
+    "src/renderer/src/hooks/useSettingsForm.ts"
+  ],
+  "ignorePatterns": [
+    "coverage",
+    "dist",
+    "out",
+    "reports",
+    "playwright-report"
+  ],
+  "vitest": {
+    "configFile": "vitest.config.ts",
+    "related": true
+  }
+}
