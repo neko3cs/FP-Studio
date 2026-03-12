@@ -4,9 +4,21 @@ import { tmpdir } from 'os'
 
 import { describe, expect, it } from 'vitest'
 
-import { ensureStudioAppDirectory, getDatabaseFilePath } from './app-paths'
+import {
+  STUDIO_APP_DIRECTORY_NAME,
+  STUDIO_DATABASE_FILE_NAME,
+  ensureStudioAppDirectory,
+  getDatabaseFilePath,
+  getStudioAppDirectory
+} from './app-paths'
 
 describe('app paths', () => {
+  it('アプリ保存先のパスを組み立てる', () => {
+    expect(getStudioAppDirectory('/tmp/appdata')).toBe('/tmp/appdata/FP Studio')
+    expect(STUDIO_APP_DIRECTORY_NAME).toBe('FP Studio')
+    expect(STUDIO_DATABASE_FILE_NAME).toBe('FP Studio.db')
+  })
+
   it('FP Studio 用の保存先を作成する', () => {
     const appDataPath = mkdtempSync(join(tmpdir(), 'fp-studio-appdata-'))
     const directory = ensureStudioAppDirectory(appDataPath)
