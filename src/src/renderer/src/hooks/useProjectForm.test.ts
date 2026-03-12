@@ -34,4 +34,14 @@ describe('useProjectForm', () => {
     expect(result.current.values).toEqual({ name: '', description: '' })
     expect(result.current.canSubmit).toBe(false)
   })
+
+  it('空白だけの名前では submit できない', () => {
+    const { result } = renderHook(() => useProjectForm())
+
+    act(() => {
+      result.current.updateField('name', '   ')
+    })
+
+    expect(result.current.canSubmit).toBe(false)
+  })
 })
