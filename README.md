@@ -74,38 +74,6 @@ FP StudioはローカルのSQLiteを使ってデータを保存します。
 
 このアプリは、FP計測の入力負荷を下げつつ、見積の根拠を残しやすくすることを目的にしています。まずは小さな案件で試し、チームの見積ルールに合わせて生産性設定を調整しながら使うのがオススメです。
 
-## 開発者向けテスト
+## 開発者向け情報
 
-アプリ本体のNode / Electron-Viteプロジェクトは `src/` 配下にあります。テスト品質を確認するときは、`src/` へ移動して次のコマンドを実行します。
-
-```bash
-cd src
-npm run test
-npm run test:coverage
-npm run test:mutation
-```
-
-### テスト実行方法
-
-- `npm run test`: Vitestで単体テストを実行します
-- `npm run test:coverage`: Vitestのcoverage計測を有効化して実行します
-- `npm run test:mutation`: Strykerによるmutation testingを実行します
-
-### カバレッジ確認方法
-
-`npm run test:coverage` を実行すると、ターミナルにcoverageサマリーが表示され、`src/coverage/` にHTMLレポートが出力されます。
-
-このリポジトリでは **branch coverage を品質基準** として使用しており、対象ユニットの **branch coverage が 80% 未満** の場合はコマンドが失敗します。
-
-### Mutation test 実行方法
-
-`npm run test:mutation` を実行すると、StrykerがVitestを使ってmutation testingを行い、結果をコンソールとHTMLレポートで確認できます。
-
-mutation testingの結果は `src/reports/mutation/html/index.html` に出力されます。
-
-### スコアの見方
-
-- **Branch coverage**: 条件分岐がどれだけテストで通過したかを表します。80% 未満は失敗です。
-- **Mutation score**: テストが意図的なコード改変（mutant）をどれだけ検出できたかを表します。60% 未満は失敗です。
-
-目安として、coverageは「どこまで実行できたか」、mutation scoreは「そのテストが壊れたロジックを本当に検出できるか」を見る指標です。両方を併用することで、AIが生成したテストも含めて品質を自動評価しやすくなります。
+詳細な開発や検証、配布手順は `src/README.md` にまとめています。ソースコードやテストに関わる作業の際はそちらを参照してください。
