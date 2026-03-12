@@ -176,5 +176,7 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node,macos
 
-# Stryker temporary files
+# Stryker mutation testing temporary files
 .stryker-tmp
+test-results
+reports
