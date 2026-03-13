@@ -133,7 +133,7 @@ export function createStudioService(repository: StudioRepository): StudioService
       }
 
       const det = requireInteger(input.det, 'DET', 1)
-      const referenceCount = requireInteger(input.referenceCount, '参照ファイル数', 0)
+      const referenceCount = requireInteger(input.referenceCount, 'FTR/RET', 0)
       const analysis = analyzeFunctionPoint(input.functionType, det, referenceCount)
       const now = new Date().toISOString()
       const entry: FunctionEntry = {
@@ -175,7 +175,7 @@ export function createStudioService(repository: StudioRepository): StudioService
       }
 
       const det = requireInteger(input.det, 'DET', 1)
-      const referenceCount = requireInteger(input.referenceCount, '参照ファイル数', 0)
+        const referenceCount = requireInteger(input.referenceCount, 'FTR/RET', 0)
       const analysis = analyzeFunctionPoint(input.functionType, det, referenceCount)
       const updatedAt = new Date().toISOString()
 

@@ -31,6 +31,7 @@ interface UseFpStudioAppResult {
     cancelEditingFunctionEntry: () => void
     deleteFunctionEntry: (entryId: string) => void
     updateProjectProductivity: () => void
+    exportProjectToExcel: (projectId: string) => void
   }
 }
 
@@ -181,6 +182,15 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     [entryForm, projects, refreshProjects, runAction, selectedProjectId]
   )
 
+  const exportProjectToExcel = useCallback(
+    (projectId: string) => {
+      void runAction(async () => {
+        await window.fpStudio.exportProjectToExcel({ projectId })
+      })
+    },
+    [runAction]
+  )
+
   const submitFunctionEntry = useCallback(() => {
     if (!selectedProjectId) {
       return
@@ -291,6 +301,7 @@ export function useFpStudioApp(): UseFpStudioAppResult {
       createProject,
       selectProject,
       deleteProject,
+      exportProjectToExcel,
       submitFunctionEntry,
       startEditingFunctionEntry,
       cancelEditingFunctionEntry,
