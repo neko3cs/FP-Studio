@@ -272,6 +272,7 @@ export function FunctionEntryForm({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [activeHelp, setActiveHelp] = useState<HelpTopic | null>(null)
   const isOpen = isEditing || !isCollapsed
+  const headingLabel = `${projectName} の機能を${isEditing ? '編集' : '追加'}`
   const referenceHelp = {
     title: 'FTR/RET とは？',
     description: (
@@ -312,14 +313,14 @@ export function FunctionEntryForm({
       <Button
         aria-controls="function-entry-form-content"
         aria-expanded={isOpen}
-        aria-label={`${projectName} の機能を${isEditing ? '編集' : '追加'}`}
+        aria-label={headingLabel}
         appearance="subtle"
         className={styles.headerButton}
         data-testid="function-form-accordion-button"
         onClick={() => setIsCollapsed((current) => !current)}
       >
         <div className={styles.headerContent}>
-          <Title3 as="h3" className={styles.sectionTitle}>
+          <Title3 as="h3" className={styles.sectionTitle} aria-label={headingLabel}>
             {isEditing ? '機能を編集' : '機能を追加'}
           </Title3>
           <Badge

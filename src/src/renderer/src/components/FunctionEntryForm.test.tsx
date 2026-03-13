@@ -42,22 +42,19 @@ describe('FunctionEntryForm', () => {
   it('shows a shorter heading while creating a function entry', () => {
     renderForm()
 
-    expect(
-      screen.getByRole('heading', {
-        name: '機能を追加'
-      }).textContent
-    ).toBe('機能を追加')
-    expect(screen.queryByRole('heading', { name: 'プロジェクト に機能を追加' })).toBeNull()
+    const heading = screen.getByRole('heading', {
+      name: /機能を追加$/
+    })
+    expect(heading.textContent).toBe('機能を追加')
   })
 
   it('shows an edit heading when editing a function entry', () => {
     renderForm({ isEditing: true })
 
-    expect(
-      screen.getByRole('heading', {
-        name: '機能を編集'
-      }).textContent
-    ).toBe('機能を編集')
+    const heading = screen.getByRole('heading', {
+      name: /機能を編集$/
+    })
+    expect(heading.textContent).toBe('機能を編集')
   })
 
   it('opens and closes the help dialog when a question button is clicked', () => {
