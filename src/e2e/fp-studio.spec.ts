@@ -71,6 +71,14 @@ test.describe('FP Studio business scenarios', () => {
       await expect(app.page.getByTestId('summary-total-ufp')).toHaveText('14')
       await expect(app.page.getByTestId('summary-estimated-effort')).toHaveText('14 人日')
       await expect(app.page.getByTestId('summary-function-count')).toHaveText('2')
+      await expect(app.page.getByTestId('function-help-button-functionType')).toBeVisible()
+      await app.page.getByTestId('function-help-button-functionType').click()
+      await expect(app.page.getByTestId('function-help-dialog-title')).toHaveText(
+        'Function Type とは？'
+      )
+      await expect(app.page.getByTestId('function-help-dialog-description')).toContainText('EI')
+      await app.page.getByTestId('function-help-dialog-close').click()
+      await expect(app.page.getByTestId('function-help-dialog')).toBeHidden()
     } finally {
       await closeStudioApp(app)
       await removeAppDataRoot(appDataRoot)

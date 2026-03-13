@@ -1,3 +1,4 @@
+import '../../test/setup'
 import { FluentProvider, webLightTheme } from '@fluentui/react-components'
 import { act, cleanup, render, screen } from '@testing-library/react'
 import React from 'react'
