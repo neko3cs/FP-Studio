@@ -1,28 +1,48 @@
-import { describe, expect, it, vi } from 'vitest'
+import { BrowserWindow, dialog } from 'electron'
+import { buildProjectWorkbook, buildDefaultExportFileName } from '../export/project-excel'
+
+import { describe, expect, it, vi, beforeEach } from 'vitest'
 
 import type { ProjectDetail, ProjectSummary, StudioSettings } from '@shared/fp'
 
 import { createStudioIpcHandlers } from './handlers'
 import type { StudioService } from '../services/studio-service'
 
+vi.mock('electron', () => ({
+  BrowserWindow: {
+    getFocusedWindow: vi.fn()
+  },
+  dialog: {
+    showSaveDialog: vi.fn()
+  }
+}))
+
+vi.mock('../export/project-excel', () => ({
+  buildProjectWorkbook: vi.fn(),
+  buildDefaultExportFileName: vi.fn()
+}))
+
+const projectSummary: ProjectSummary = {
+  id: 'p1',
+  name: 'A',
+  description: '',
+  productivity: 1,
+  functionCount: 0,
+  totalFunctionPoints: 0,
+  estimatedEffortDays: 0,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z'
+}
+
+const projectDetail: ProjectDetail = {
+  ...projectSummary,
+  entries: []
+}
+
+const settings: StudioSettings = { defaultProductivity: 1 }
+
 describe('createStudioIpcHandlers', () => {
   it('サービスへ処理を委譲する', async () => {
-    const projectSummary: ProjectSummary = {
-      id: 'p1',
-      name: 'A',
-      description: '',
-      productivity: 1,
-      functionCount: 0,
-      totalFunctionPoints: 0,
-      estimatedEffortDays: 0,
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z'
-    }
-    const projectDetail: ProjectDetail = {
-      ...projectSummary,
-      entries: []
-    }
-    const settings: StudioSettings = { defaultProductivity: 1 }
     const service: StudioService = {
       listProjects: vi.fn<StudioService['listProjects']>(() => [projectSummary]),
       getProjectDetail: vi.fn<StudioService['getProjectDetail']>(() => null),
@@ -108,5 +128,99 @@ describe('createStudioIpcHandlers', () => {
       projectId: 'p1',
       productivity: 1.5
     })
+  })
+})
+
+
+describe('exportProjectToExcel handler', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('throws when the project is missing', async () => {
+    const service: StudioService = {
+      listProjects: vi.fn(() => [projectSummary]),
+      getProjectDetail: vi.fn(() => null),
+      createProject: vi.fn(),
+      deleteProject: vi.fn(),
+      createFunctionEntry: vi.fn(),
+      updateFunctionEntry: vi.fn(),
+      deleteFunctionEntry: vi.fn(),
+      getSettings: vi.fn(),
+      updateSettings: vi.fn(),
+      updateProjectProductivity: vi.fn()
+    }
+
+    const handlers = createStudioIpcHandlers(service)
+
+    await expect(handlers.exportProjectToExcel({ projectId: projectSummary.id })).rejects.toThrow(
+      '対象のプロジェクトが見つかりません。'
+    )
+  })
+
+  it('does nothing when the save dialog is canceled', async () => {
+    const workbook = { xlsx: { writeFile: vi.fn() } }
+    const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
+    const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
+    const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
+    const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
+
+    mockedBuildProjectWorkbook.mockReturnValue(workbook)
+    mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
+    mockedGetFocusedWindow.mockReturnValue({})
+    mockedShowSaveDialog.mockResolvedValue({ canceled: true })
+
+    const service: StudioService = {
+      listProjects: vi.fn(),
+      getProjectDetail: vi.fn(() => projectDetail),
+      createProject: vi.fn(),
+      deleteProject: vi.fn(),
+      createFunctionEntry: vi.fn(),
+      updateFunctionEntry: vi.fn(),
+      deleteFunctionEntry: vi.fn(),
+      getSettings: vi.fn(),
+      updateSettings: vi.fn(),
+      updateProjectProductivity: vi.fn()
+    }
+
+    const handlers = createStudioIpcHandlers(service)
+
+    await handlers.exportProjectToExcel({ projectId: projectSummary.id })
+
+    expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
+    expect(workbook.xlsx.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('writes the workbook when the dialog confirms', async () => {
+    const workbook = { xlsx: { writeFile: vi.fn() } }
+    const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
+    const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
+    const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
+    const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
+
+    mockedBuildProjectWorkbook.mockReturnValue(workbook)
+    mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
+    mockedGetFocusedWindow.mockReturnValue({ id: 'window' })
+    mockedShowSaveDialog.mockResolvedValue({ canceled: false, filePath: '/tmp/export.xlsx' })
+
+    const service: StudioService = {
+      listProjects: vi.fn(),
+      getProjectDetail: vi.fn(() => projectDetail),
+      createProject: vi.fn(),
+      deleteProject: vi.fn(),
+      createFunctionEntry: vi.fn(),
+      updateFunctionEntry: vi.fn(),
+      deleteFunctionEntry: vi.fn(),
+      getSettings: vi.fn(),
+      updateSettings: vi.fn(),
+      updateProjectProductivity: vi.fn()
+    }
+
+    const handlers = createStudioIpcHandlers(service)
+
+    await handlers.exportProjectToExcel({ projectId: projectSummary.id })
+
+    expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
+    expect(workbook.xlsx.writeFile).toHaveBeenCalledWith('/tmp/export.xlsx')
   })
 })
