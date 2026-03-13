@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { FunctionEntry, ProjectDetail, ProjectSummary, StudioSettings } from '@shared/fp'
+import type { FunctionEntry, ProjectDetail, ProjectSummary } from '@shared/fp'
 import type { UpdateState } from '@shared/ipc'
 
 import { useFunctionEntryForm } from './useFunctionEntryForm'
 import { useProjectForm } from './useProjectForm'
-import { useSettingsForm } from './useSettingsForm'
+import { useProjectProductivityForm } from './useProjectProductivityForm'
 
 interface UseFpStudioAppResult {
   projects: ProjectSummary[]
   selectedProject: ProjectDetail | null
   selectedProjectId: string | null
-  settings: StudioSettings
   projectForm: ReturnType<typeof useProjectForm>
   entryForm: ReturnType<typeof useFunctionEntryForm>
-  settingsForm: ReturnType<typeof useSettingsForm>
+  projectProductivityForm: ReturnType<typeof useProjectProductivityForm>
   isLoading: boolean
   isBusy: boolean
   errorMessage: string | null
@@ -31,12 +30,8 @@ interface UseFpStudioAppResult {
     startEditingFunctionEntry: (entry: FunctionEntry) => void
     cancelEditingFunctionEntry: () => void
     deleteFunctionEntry: (entryId: string) => void
-    updateSettings: () => void
+    updateProjectProductivity: () => void
   }
-}
-
-const defaultSettings: StudioSettings = {
-  defaultProductivity: 1
 }
 
 function getErrorMessage(error: unknown): string {
@@ -50,13 +45,12 @@ function getErrorMessage(error: unknown): string {
 export function useFpStudioApp(): UseFpStudioAppResult {
   const projectForm = useProjectForm()
   const entryForm = useFunctionEntryForm()
+  const projectProductivityForm = useProjectProductivityForm(1)
+  const { productivity: projectProductivityValue, reset: resetProjectProductivity } =
+    projectProductivityForm
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [selectedProject, setSelectedProject] = useState<ProjectDetail | null>(null)
-  const [settings, setSettings] = useState<StudioSettings>(defaultSettings)
-  const settingsForm = useSettingsForm(defaultSettings.defaultProductivity)
-  const resetSettingsForm = settingsForm.reset
-  const settingsFormValue = settingsForm.defaultProductivity
   const [isLoading, setIsLoading] = useState(true)
   const [isBusy, setIsBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -65,15 +59,22 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     message: 'アップデート状態を確認しています…'
   })
 
-  const loadProjectDetail = useCallback(async (projectId: string | null) => {
-    if (!projectId) {
-      setSelectedProject(null)
-      return
-    }
+  const loadProjectDetail = useCallback(
+    async (projectId: string | null) => {
+      if (!projectId) {
+        setSelectedProject(null)
+        return
+      }
 
-    const detail = await window.fpStudio.getProject({ projectId })
-    setSelectedProject(detail)
-  }, [])
+      const detail = await window.fpStudio.getProject({ projectId })
+      setSelectedProject(detail)
+
+      if (detail) {
+        resetProjectProductivity(detail.productivity)
+      }
+    },
+    [resetProjectProductivity]
+  )
 
   const refreshProjects = useCallback(
     async (preferredProjectId?: string | null) => {
@@ -96,13 +97,7 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     setErrorMessage(null)
 
     try {
-      const [nextSettings, nextProjects] = await Promise.all([
-        window.fpStudio.getSettings(),
-        window.fpStudio.listProjects()
-      ])
-
-      setSettings(nextSettings)
-      resetSettingsForm(nextSettings.defaultProductivity)
+      const nextProjects = await window.fpStudio.listProjects()
       setProjects(nextProjects)
 
       const firstProjectId = nextProjects[0]?.id ?? null
@@ -113,7 +108,7 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     } finally {
       setIsLoading(false)
     }
-  }, [loadProjectDetail, resetSettingsForm])
+  }, [loadProjectDetail])
 
   useEffect(() => {
     void initialize()
@@ -246,17 +241,28 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     [entryForm, refreshProjects, runAction, selectedProjectId]
   )
 
-  const updateSettings = useCallback(() => {
+  const updateProjectProductivity = useCallback(() => {
+    if (!selectedProjectId) {
+      return
+    }
+
     void runAction(async () => {
-      const nextSettings = await window.fpStudio.updateSettings({
-        defaultProductivity: Number(settingsFormValue)
+      const detail = await window.fpStudio.updateProjectProductivity({
+        projectId: selectedProjectId,
+        productivity: Number(projectProductivityValue)
       })
 
-      setSettings(nextSettings)
-      resetSettingsForm(nextSettings.defaultProductivity)
+      setSelectedProject(detail)
+      resetProjectProductivity(detail.productivity)
       await refreshProjects(selectedProjectId)
     })
-  }, [refreshProjects, resetSettingsForm, runAction, selectedProjectId, settingsFormValue])
+  }, [
+    projectProductivityValue,
+    refreshProjects,
+    runAction,
+    resetProjectProductivity,
+    selectedProjectId
+  ])
 
   const checkForUpdates = useCallback(() => {
     void window.fpStudio.checkForUpdates()
@@ -270,10 +276,9 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     projects,
     selectedProject,
     selectedProjectId,
-    settings,
     projectForm,
     entryForm,
-    settingsForm,
+    projectProductivityForm,
     isLoading,
     isBusy,
     errorMessage,
@@ -290,7 +295,7 @@ export function useFpStudioApp(): UseFpStudioAppResult {
       startEditingFunctionEntry,
       cancelEditingFunctionEntry,
       deleteFunctionEntry,
-      updateSettings
+      updateProjectProductivity
     }
   }
 }

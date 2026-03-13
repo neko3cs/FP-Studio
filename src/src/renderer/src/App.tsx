@@ -15,7 +15,7 @@ import { FunctionEntryForm } from './components/FunctionEntryForm'
 import { FunctionEntryTable } from './components/FunctionEntryTable'
 import { ProjectSidebar } from './components/ProjectSidebar'
 import { ProjectSummaryCards } from './components/ProjectSummaryCards'
-import { SettingsPanel } from './components/SettingsPanel'
+import { ProjectProductivityPanel } from './components/ProjectProductivityPanel'
 import UpdateStatusCard from './components/UpdateStatusCard'
 import { useFpStudioApp } from './hooks/useFpStudioApp'
 
@@ -89,7 +89,7 @@ function App(): React.JSX.Element {
     selectedProjectId,
     projectForm,
     entryForm,
-    settingsForm,
+    projectProductivityForm,
     isLoading,
     isBusy,
     errorMessage,
@@ -136,17 +136,17 @@ function App(): React.JSX.Element {
             </MessageBar>
           ) : null}
 
-          <SettingsPanel
-            canSubmit={settingsForm.canSubmit}
-            defaultProductivity={settingsForm.defaultProductivity}
-            isBusy={isBusy}
-            onChange={settingsForm.updateValue}
-            onSubmit={actions.updateSettings}
-          />
-
           {selectedProject ? (
             <div className={styles.content}>
               <ProjectSummaryCards project={selectedProject} />
+              <ProjectProductivityPanel
+                project={selectedProject}
+                productivity={projectProductivityForm.productivity}
+                canSubmit={projectProductivityForm.canSubmit}
+                isBusy={isBusy}
+                onChange={projectProductivityForm.updateValue}
+                onSubmit={actions.updateProjectProductivity}
+              />
               <FunctionEntryForm
                 canSubmit={entryForm.canSubmit}
                 isBusy={isBusy}

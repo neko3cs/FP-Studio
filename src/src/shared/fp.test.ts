@@ -91,7 +91,8 @@ describe('buildProjectTotals', () => {
           name: '案件A',
           description: '説明',
           createdAt: '2026-01-01T00:00:00.000Z',
-          updatedAt: '2026-01-01T00:00:00.000Z'
+          updatedAt: '2026-01-01T00:00:00.000Z',
+          productivity: 1.333
         },
         [
           {
@@ -107,8 +108,7 @@ describe('buildProjectTotals', () => {
             createdAt: '2026-01-01T00:00:00.000Z',
             updatedAt: '2026-01-01T00:00:00.000Z'
           }
-        ],
-        1.333
+        ]
       )
     ).toEqual({
       id: 'p1',
@@ -116,6 +116,7 @@ describe('buildProjectTotals', () => {
       description: '説明',
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
+      productivity: 1.333,
       functionCount: 1,
       totalFunctionPoints: 4,
       estimatedEffortDays: 5.33
@@ -126,7 +127,10 @@ describe('buildProjectTotals', () => {
 describe('analyzeFunctionPoint の境界値', () => {
   it('データ機能の上限より上の DET / 参照数を評価する', () => {
     expect(analyzeFunctionPoint('ILF', 55, 6)).toEqual({ difficulty: 'High', functionPoints: 15 })
-    expect(analyzeFunctionPoint('ILF', 35, 4)).toEqual({ difficulty: 'Average', functionPoints: 10 })
+    expect(analyzeFunctionPoint('ILF', 35, 4)).toEqual({
+      difficulty: 'Average',
+      functionPoints: 10
+    })
   })
 
   it('トランザクション機能の参照閾値を網羅する', () => {

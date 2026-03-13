@@ -9,6 +9,7 @@ import {
   type ProjectSummary,
   type StudioSettings,
   type UpdateFunctionEntryInput,
+  type UpdateProjectProductivityInput,
   type UpdateSettingsInput
 } from '@shared/fp'
 
@@ -24,6 +25,7 @@ export interface StudioService {
   deleteFunctionEntry: (input: DeleteFunctionEntryInput) => ProjectDetail
   getSettings: () => StudioSettings
   updateSettings: (input: UpdateSettingsInput) => StudioSettings
+  updateProjectProductivity: (input: UpdateProjectProductivityInput) => ProjectDetail
 }
 
 function requireNonEmptyText(value: string, fieldName: string): string {
@@ -45,12 +47,24 @@ function requireInteger(value: number, fieldName: string, minimum: number): numb
 }
 
 function toProjectDetail(
-  project: { id: string; name: string; description: string; createdAt: string; updatedAt: string },
+  project: {
+    id: string
+    name: string
+    description: string
+    createdAt: string
+    updatedAt: string
+    productivity?: number
+  },
   entries: FunctionEntry[],
   settings: StudioSettings
 ): ProjectDetail {
+  const resolvedProductivity =
+    typeof project.productivity === 'number' && Number.isFinite(project.productivity)
+      ? project.productivity
+      : settings.defaultProductivity
+
   return {
-    ...buildProjectSummary(project, entries, settings.defaultProductivity),
+    ...buildProjectSummary({ ...project, productivity: resolvedProductivity }, entries),
     entries
   }
 }
@@ -62,7 +76,15 @@ export function createStudioService(repository: StudioRepository): StudioService
 
       return repository.listProjects().map((project) => {
         const entries = repository.listFunctionEntries(project.id)
-        return buildProjectSummary(project, entries, settings.defaultProductivity)
+        const resolvedProject = {
+          ...project,
+          productivity:
+            typeof project.productivity === 'number' && Number.isFinite(project.productivity)
+              ? project.productivity
+              : settings.defaultProductivity
+        }
+
+        return buildProjectSummary(resolvedProject, entries)
       })
     },
     getProjectDetail: (projectId) => {
@@ -80,17 +102,19 @@ export function createStudioService(repository: StudioRepository): StudioService
     },
     createProject: (input) => {
       const now = new Date().toISOString()
+      const projectSettings = repository.getSettings()
       const project = {
         id: crypto.randomUUID(),
         name: requireNonEmptyText(input.name, 'プロジェクト名'),
         description: input.description.trim(),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        productivity: projectSettings.defaultProductivity
       }
 
       repository.createProject(project)
 
-      return toProjectDetail(project, [], repository.getSettings())
+      return toProjectDetail(project, [], projectSettings)
     },
     deleteProject: (projectId) => {
       const project = repository.getProject(projectId)
@@ -196,6 +220,33 @@ export function createStudioService(repository: StudioRepository): StudioService
       return toProjectDetail(
         { ...project, updatedAt },
         repository.listFunctionEntries(input.projectId),
+        repository.getSettings()
+      )
+    },
+    updateProjectProductivity: (input) => {
+      const project = repository.getProject(input.projectId)
+
+      if (!project) {
+        throw new Error('対象プロジェクトが見つかりません。')
+      }
+
+      if (!Number.isFinite(input.productivity) || input.productivity <= 0) {
+        throw new Error('生産性は0より大きい数値で入力してください。')
+      }
+
+      const normalizedProductivity = Number(input.productivity.toFixed(2))
+      const updatedAt = new Date().toISOString()
+
+      repository.setProjectProductivity(project.id, normalizedProductivity, updatedAt)
+      const updatedProject = {
+        ...project,
+        updatedAt,
+        productivity: normalizedProductivity
+      }
+
+      return toProjectDetail(
+        updatedProject,
+        repository.listFunctionEntries(project.id),
         repository.getSettings()
       )
     },

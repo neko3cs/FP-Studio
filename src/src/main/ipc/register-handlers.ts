@@ -17,6 +17,7 @@ export function registerStudioIpcHandlers(
   ipcMain.removeHandler(STUDIO_CHANNELS.deleteFunctionEntry)
   ipcMain.removeHandler(STUDIO_CHANNELS.getSettings)
   ipcMain.removeHandler(STUDIO_CHANNELS.updateSettings)
+  ipcMain.removeHandler(STUDIO_CHANNELS.updateProjectProductivity)
 
   ipcMain.handle(STUDIO_CHANNELS.listProjects, () => handlers.listProjects())
   ipcMain.handle(STUDIO_CHANNELS.getProject, (_event, input) => handlers.getProject(input))
@@ -33,4 +34,7 @@ export function registerStudioIpcHandlers(
   )
   ipcMain.handle(STUDIO_CHANNELS.getSettings, () => handlers.getSettings())
   ipcMain.handle(STUDIO_CHANNELS.updateSettings, (_event, input) => handlers.updateSettings(input))
+  ipcMain.handle(STUDIO_CHANNELS.updateProjectProductivity, (_event, input) =>
+    handlers.updateProjectProductivity(input)
+  )
 }

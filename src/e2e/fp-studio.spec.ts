@@ -94,9 +94,9 @@ test.describe('FP Studio business scenarios', () => {
       await expect(app.page.getByTestId('summary-total-ufp')).toHaveText('4')
       await expect(app.page.getByTestId('summary-estimated-effort')).toHaveText('4 人日')
 
-      await app.page.getByTestId('settings-accordion-button').click()
-      await app.page.getByTestId('settings-productivity-input').fill('1.5')
-      await app.page.getByTestId('settings-save-button').click()
+      await app.page.getByTestId('project-productivity-accordion-button').click()
+      await app.page.getByTestId('project-productivity-input').fill('1.5')
+      await app.page.getByTestId('project-productivity-save-button').click()
 
       await expect(app.page.getByTestId('summary-estimated-effort')).toHaveText('6 人日')
       await closeStudioApp(app)

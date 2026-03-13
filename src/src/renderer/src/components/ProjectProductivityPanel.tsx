@@ -11,8 +11,11 @@ import {
   tokens
 } from '@fluentui/react-components'
 
-interface SettingsPanelProps {
-  defaultProductivity: string
+import type { ProjectDetail } from '@shared/fp'
+
+interface ProjectProductivityPanelProps {
+  project: ProjectDetail | null
+  productivity: string
   canSubmit: boolean
   isBusy: boolean
   onChange: (value: string) => void
@@ -46,9 +49,9 @@ const useStyles = makeStyles({
   },
   headerContent: {
     display: 'flex',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: tokens.spacingHorizontalM
+    flexDirection: 'column',
+    textAlign: 'left',
+    gap: tokens.spacingVerticalXS
   },
   currentValueLabel: {
     color: tokens.colorNeutralForeground3
@@ -79,15 +82,17 @@ const useStyles = makeStyles({
   }
 })
 
-export function SettingsPanel({
-  defaultProductivity,
+export function ProjectProductivityPanel({
+  project,
+  productivity,
   canSubmit,
   isBusy,
   onChange,
   onSubmit
-}: SettingsPanelProps): React.JSX.Element {
+}: ProjectProductivityPanelProps): React.JSX.Element {
   const styles = useStyles()
   const [isOpen, setIsOpen] = useState(false)
+  const projectName = project?.name ?? 'プロジェクト未選択'
 
   return (
     <Card
@@ -95,39 +100,43 @@ export function SettingsPanel({
       className={`${styles.card} ${isOpen ? styles.cardOpen : styles.cardCollapsed}`}
     >
       <Button
-        aria-controls="settings-panel-content"
+        aria-controls="project-productivity-panel-content"
         aria-expanded={isOpen}
         appearance="subtle"
         className={styles.headerButton}
-        data-testid="settings-accordion-button"
+        data-testid="project-productivity-accordion-button"
         onClick={() => setIsOpen((current) => !current)}
       >
         <div className={styles.headerContent}>
-          <Body2>生産性設定</Body2>
-          <Text className={styles.currentValueLabel}>{defaultProductivity} 人日 / FP</Text>
+          <Body2>プロジェクト生産性</Body2>
+          <div>
+            <Text className={styles.currentValueLabel}>
+              {projectName} / {productivity} 人日 / FP
+            </Text>
+          </div>
         </div>
         <span className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}>▾</span>
       </Button>
 
       {isOpen ? (
-        <div className={styles.panel} id="settings-panel-content">
-          <Field className={styles.field} label="デフォルト生産性 (人日 / FP)">
+        <div className={styles.panel} id="project-productivity-panel-content">
+          <Field className={styles.field} label="このプロジェクトの生産性 (人日 / FP)">
             <Input
-              data-testid="settings-productivity-input"
-              disabled={isBusy}
+              data-testid="project-productivity-input"
+              disabled={isBusy || !project}
               inputMode="decimal"
-              value={defaultProductivity}
+              value={productivity}
               onChange={(_, data) => onChange(data.value)}
             />
           </Field>
 
           <Button
             appearance="secondary"
-            data-testid="settings-save-button"
-            disabled={isBusy || !canSubmit}
+            data-testid="project-productivity-save-button"
+            disabled={isBusy || !project || !canSubmit}
             onClick={onSubmit}
           >
-            設定を保存
+            値を更新
           </Button>
         </div>
       ) : null}

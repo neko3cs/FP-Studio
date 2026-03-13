@@ -34,6 +34,7 @@ export interface ProjectSummary extends ProjectTotals {
   description: string
   createdAt: string
   updatedAt: string
+  productivity: number
 }
 
 export interface ProjectDetail extends ProjectSummary {
@@ -73,6 +74,11 @@ export interface DeleteFunctionEntryInput {
 
 export interface UpdateSettingsInput {
   defaultProductivity: number
+}
+
+export interface UpdateProjectProductivityInput {
+  projectId: string
+  productivity: number
 }
 
 export interface FunctionPointAnalysis {
@@ -216,26 +222,24 @@ export function analyzeFunctionPoint(
   }
 }
 
-export function buildProjectTotals(
-  entries: FunctionEntry[],
-  defaultProductivity: number
-): ProjectTotals {
+export function buildProjectTotals(entries: FunctionEntry[], productivity: number): ProjectTotals {
   const totalFunctionPoints = entries.reduce((total, entry) => total + entry.functionPoints, 0)
 
   return {
     functionCount: entries.length,
     totalFunctionPoints,
-    estimatedEffortDays: roundToTwoDecimals(totalFunctionPoints * defaultProductivity)
+    estimatedEffortDays: roundToTwoDecimals(totalFunctionPoints * productivity)
   }
 }
 
 export function buildProjectSummary(
-  project: Pick<ProjectDetail, 'id' | 'name' | 'description' | 'createdAt' | 'updatedAt'>,
-  entries: FunctionEntry[],
-  defaultProductivity: number
+  project: Pick<ProjectDetail, 'id' | 'name' | 'description' | 'createdAt' | 'updatedAt'> & {
+    productivity: number
+  },
+  entries: FunctionEntry[]
 ): ProjectSummary {
   return {
     ...project,
-    ...buildProjectTotals(entries, defaultProductivity)
+    ...buildProjectTotals(entries, project.productivity)
   }
 }

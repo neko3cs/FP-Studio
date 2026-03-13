@@ -7,7 +7,7 @@ import { functionEntriesTable, projectsTable, settingsTable } from '../database/
 
 interface ProjectRecord extends Pick<
   ProjectDetail,
-  'id' | 'name' | 'description' | 'createdAt' | 'updatedAt'
+  'id' | 'name' | 'description' | 'createdAt' | 'updatedAt' | 'productivity'
 > {}
 
 interface FunctionEntryRecord extends FunctionEntry {}
@@ -17,6 +17,7 @@ export interface StudioRepository {
   getProject: (projectId: string) => ProjectRecord | null
   createProject: (project: ProjectRecord) => void
   updateProjectTimestamp: (projectId: string, updatedAt: string) => void
+  setProjectProductivity: (projectId: string, productivity: number, updatedAt: string) => void
   deleteProject: (projectId: string) => void
   listFunctionEntries: (projectId: string) => FunctionEntryRecord[]
   createFunctionEntry: (entry: FunctionEntryRecord) => void
@@ -59,6 +60,12 @@ export function createStudioRepository(databaseContext: DatabaseContext): Studio
     },
     deleteProject: (projectId) => {
       db.delete(projectsTable).where(eq(projectsTable.id, projectId)).run()
+    },
+    setProjectProductivity: (projectId, productivity, updatedAt) => {
+      db.update(projectsTable)
+        .set({ productivity, updatedAt })
+        .where(eq(projectsTable.id, projectId))
+        .run()
     },
     listFunctionEntries: (projectId) =>
       db
