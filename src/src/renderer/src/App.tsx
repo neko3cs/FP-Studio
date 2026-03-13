@@ -16,6 +16,7 @@ import { FunctionEntryTable } from './components/FunctionEntryTable'
 import { ProjectSidebar } from './components/ProjectSidebar'
 import { ProjectSummaryCards } from './components/ProjectSummaryCards'
 import { SettingsPanel } from './components/SettingsPanel'
+import UpdateStatusCard from './components/UpdateStatusCard'
 import { useFpStudioApp } from './hooks/useFpStudioApp'
 
 const useStyles = makeStyles({
@@ -68,6 +69,15 @@ const useStyles = makeStyles({
     alignItems: 'center',
     gap: tokens.spacingVerticalM,
     padding: tokens.spacingHorizontalXXL
+  },
+  toastContainer: {
+    position: 'fixed',
+    bottom: tokens.spacingVerticalXXL,
+    left: tokens.spacingHorizontalXXL,
+    zIndex: 2
+  },
+  toastWrapper: {
+    maxWidth: '320px'
   }
 })
 
@@ -83,6 +93,8 @@ function App(): React.JSX.Element {
     isLoading,
     isBusy,
     errorMessage,
+    updateState,
+    updateActions,
     actions
   } = useFpStudioApp()
 
@@ -159,6 +171,17 @@ function App(): React.JSX.Element {
           )}
         </main>
       </div>
+      {updateState.status !== 'idle' && (
+        <div className={styles.toastContainer}>
+          <div className={styles.toastWrapper}>
+            <UpdateStatusCard
+              state={updateState}
+              onCheckForUpdates={updateActions.checkForUpdates}
+              onInstallUpdate={updateActions.installUpdate}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

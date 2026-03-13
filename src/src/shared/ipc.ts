@@ -23,6 +23,32 @@ export const STUDIO_CHANNELS = {
   updateSettings: 'studio:update-settings'
 } as const
 
+export const UPDATE_CHANNELS = {
+  getUpdateState: 'studio:get-update-state',
+  checkForUpdates: 'studio:check-for-updates',
+  installUpdate: 'studio:install-update'
+} as const
+
+export const UPDATE_EVENTS = {
+  stateChanged: 'studio:update-state-changed'
+} as const
+
+export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error'
+
+export interface UpdateProgress {
+  percent: number
+  transferred: number
+  total: number
+}
+
+export interface UpdateState {
+  status: UpdateStatus
+  message?: string
+  version?: string
+  releaseNotes?: string
+  progress?: UpdateProgress
+}
+
 export interface StudioApi {
   listProjects: () => Promise<ProjectSummary[]>
   getProject: (input: GetProjectInput) => Promise<ProjectDetail | null>
@@ -33,4 +59,8 @@ export interface StudioApi {
   deleteFunctionEntry: (input: DeleteFunctionEntryInput) => Promise<ProjectDetail>
   getSettings: () => Promise<StudioSettings>
   updateSettings: (input: UpdateSettingsInput) => Promise<StudioSettings>
+  getUpdateState: () => Promise<UpdateState>
+  checkForUpdates: () => Promise<void>
+  installUpdate: () => Promise<void>
+  subscribeToUpdateState: (listener: (state: UpdateState) => void) => () => void
 }

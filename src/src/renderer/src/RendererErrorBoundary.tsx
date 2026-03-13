@@ -53,7 +53,7 @@ const reloadButtonStyle: CSSProperties = {
   cursor: 'pointer'
 }
 
-function normalizeError(error: unknown): Error {
+export function normalizeError(error: unknown): Error {
   if (error instanceof Error) {
     return error
   }
@@ -65,7 +65,7 @@ function normalizeError(error: unknown): Error {
   return new Error('予期しないエラーが発生しました。')
 }
 
-function reloadRenderer(): void {
+export function reloadRenderer(): void {
   window.location.reload()
 }
 

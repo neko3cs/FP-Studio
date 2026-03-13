@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import type { FunctionEntry, ProjectDetail, ProjectSummary, StudioSettings } from '@shared/fp'
+import type { UpdateState } from '@shared/ipc'
 
 import { useFunctionEntryForm } from './useFunctionEntryForm'
 import { useProjectForm } from './useProjectForm'
@@ -17,6 +18,11 @@ interface UseFpStudioAppResult {
   isLoading: boolean
   isBusy: boolean
   errorMessage: string | null
+  updateState: UpdateState
+  updateActions: {
+    checkForUpdates: () => void
+    installUpdate: () => void
+  }
   actions: {
     createProject: () => void
     selectProject: (projectId: string) => void
@@ -54,6 +60,10 @@ export function useFpStudioApp(): UseFpStudioAppResult {
   const [isLoading, setIsLoading] = useState(true)
   const [isBusy, setIsBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [updateState, setUpdateState] = useState<UpdateState>({
+    status: 'idle',
+    message: 'アップデート状態を確認しています…'
+  })
 
   const loadProjectDetail = useCallback(async (projectId: string | null) => {
     if (!projectId) {
@@ -108,6 +118,24 @@ export function useFpStudioApp(): UseFpStudioAppResult {
   useEffect(() => {
     void initialize()
   }, [initialize])
+
+  useEffect(() => {
+    const unsubscribe = window.fpStudio.subscribeToUpdateState((state) => {
+      setUpdateState(state)
+    })
+
+    let isMounted = true
+    void window.fpStudio.getUpdateState().then((state) => {
+      if (isMounted) {
+        setUpdateState(state)
+      }
+    })
+
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
+  }, [])
 
   const runAction = useCallback(async (action: () => Promise<void>) => {
     setIsBusy(true)
@@ -230,6 +258,14 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     })
   }, [refreshProjects, resetSettingsForm, runAction, selectedProjectId, settingsFormValue])
 
+  const checkForUpdates = useCallback(() => {
+    void window.fpStudio.checkForUpdates()
+  }, [])
+
+  const installUpdate = useCallback(() => {
+    void window.fpStudio.installUpdate()
+  }, [])
+
   return {
     projects,
     selectedProject,
@@ -241,6 +277,11 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     isLoading,
     isBusy,
     errorMessage,
+    updateState,
+    updateActions: {
+      checkForUpdates,
+      installUpdate
+    },
     actions: {
       createProject,
       selectProject,

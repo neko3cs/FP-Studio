@@ -3,7 +3,11 @@ import { act, cleanup, render, screen } from '@testing-library/react'
 import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { RendererErrorBoundary } from './RendererErrorBoundary'
+import {
+  RendererErrorBoundary,
+  normalizeError,
+  reloadRenderer
+} from './RendererErrorBoundary'
 
 function renderWithProvider(element: React.ReactElement): void {
   render(React.createElement(FluentProvider, { theme: webLightTheme }, element))
@@ -68,5 +72,38 @@ describe('RendererErrorBoundary', () => {
     })
 
     expect(screen.getByText('予期しないエラーが発生しました。')).toBeTruthy()
+  })
+
+  it('normalizeError は Error インスタンスをそのまま返す', () => {
+    const error = new Error('boom')
+
+    expect(normalizeError(error)).toBe(error)
+  })
+
+  it('normalizeError は空文字や null を汎用メッセージにフォールバックする', () => {
+    expect(normalizeError('')).toEqual(new Error('予期しないエラーが発生しました。'))
+    expect(normalizeError(null)).toEqual(new Error('予期しないエラーが発生しました。'))
+  })
+
+  it('normalizeError は文字列メッセージを Error に変換する', () => {
+    const normalized = normalizeError('ネットワークエラー')
+
+    expect(normalized).toEqual(new Error('ネットワークエラー'))
+  })
+
+  it('reloadRenderer を呼ぶと window.location.reload が実行される', () => {
+    const reloadSpy = vi.fn()
+    const originalLocation = window.location
+
+    vi.stubGlobal('location', {
+      ...originalLocation,
+      reload: reloadSpy
+    })
+
+    reloadRenderer()
+
+    expect(reloadSpy).toHaveBeenCalled()
+
+    vi.stubGlobal('location', originalLocation)
   })
 })
