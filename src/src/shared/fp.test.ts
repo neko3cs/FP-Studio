@@ -122,3 +122,34 @@ describe('buildProjectTotals', () => {
     })
   })
 })
+
+describe('analyzeFunctionPoint の境界値', () => {
+  it('データ機能の上限より上の DET / 参照数を評価する', () => {
+    expect(analyzeFunctionPoint('ILF', 55, 6)).toEqual({ difficulty: 'High', functionPoints: 15 })
+    expect(analyzeFunctionPoint('ILF', 35, 4)).toEqual({ difficulty: 'Average', functionPoints: 10 })
+  })
+
+  it('トランザクション機能の参照閾値を網羅する', () => {
+    expect(analyzeFunctionPoint('EO', 10, 3)).toEqual({ difficulty: 'Average', functionPoints: 5 })
+    expect(analyzeFunctionPoint('EQ', 8, 5)).toEqual({ difficulty: 'High', functionPoints: 6 })
+    expect(analyzeFunctionPoint('EQ', 6, 1)).toEqual({ difficulty: 'Low', functionPoints: 3 })
+  })
+})
+
+describe('analyzeFunctionPoint の参照数の分岐', () => {
+  it('EI は 2 件で中間、最大で高難易度になる', () => {
+    expect(analyzeFunctionPoint('EI', 10, 2)).toEqual({ difficulty: 'Average', functionPoints: 4 })
+    expect(analyzeFunctionPoint('EI', 20, 4)).toEqual({ difficulty: 'High', functionPoints: 6 })
+  })
+
+  it('EQ は参照数と DET に応じて Low〜High の難易度を返す', () => {
+    expect(analyzeFunctionPoint('EQ', 5, 1)).toEqual({ difficulty: 'Low', functionPoints: 3 })
+    expect(analyzeFunctionPoint('EQ', 10, 2)).toEqual({ difficulty: 'Average', functionPoints: 4 })
+    expect(analyzeFunctionPoint('EQ', 25, 4)).toEqual({ difficulty: 'High', functionPoints: 6 })
+  })
+
+  it('ILF/EIF は DET と参照数の最大値で High を返す', () => {
+    expect(analyzeFunctionPoint('ILF', 5, 1)).toEqual({ difficulty: 'Low', functionPoints: 7 })
+    expect(analyzeFunctionPoint('EIF', 55, 7)).toEqual({ difficulty: 'High', functionPoints: 10 })
+  })
+})

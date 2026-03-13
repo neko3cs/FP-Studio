@@ -13,8 +13,10 @@ import { bootstrapDatabase } from './database/bootstrap'
 import { createDatabaseContext } from './database/client'
 import { createStudioIpcHandlers } from './ipc/handlers'
 import { registerStudioIpcHandlers } from './ipc/register-handlers'
+import { registerUpdateIpcHandlers } from './ipc/update-handlers'
 import { createStudioRepository } from './repositories/studio-repository'
 import { createStudioService } from './services/studio-service'
+import { studioUpdateManager } from './update-manager'
 
 let mainWindow: BrowserWindow | null = null
 let closeDatabase: (() => void) | null = null
@@ -65,6 +67,7 @@ app.whenReady().then(() => {
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+    studioUpdateManager.sendStateToWindow(window)
   })
 
   const appDataPath = app.getPath('appData')
@@ -72,15 +75,21 @@ app.whenReady().then(() => {
   app.setPath('userData', studioDirectory)
 
   const databaseContext = createDatabaseContext(getDatabaseFilePath(appDataPath))
-  bootstrapDatabase(databaseContext)
+  bootstrapDatabase(databaseContext, studioDirectory)
 
   const repository = createStudioRepository(databaseContext)
   closeDatabase = repository.close
 
   const service = createStudioService(repository)
   registerStudioIpcHandlers(ipcMain, createStudioIpcHandlers(service))
+  registerUpdateIpcHandlers(ipcMain, studioUpdateManager)
 
   createWindow()
+  if (mainWindow) {
+    studioUpdateManager.sendStateToWindow(mainWindow)
+  }
+
+  void studioUpdateManager.checkForUpdates()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
