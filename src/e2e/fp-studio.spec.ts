@@ -13,7 +13,8 @@ async function createProject(page: Page, name: string, description: string): Pro
   await page.getByTestId('create-project-button').click()
 
   await expect(page.getByTestId('project-list').getByText(name)).toBeVisible()
-  await expect(page.getByRole('heading', { name: `${name} に機能を追加` })).toBeVisible()
+  await expect(page.getByTestId('summary-project-name')).toHaveText(name)
+  await expect(page.getByRole('heading', { name: '機能を追加' })).toBeVisible()
 }
 
 async function addFunctionEntry(
