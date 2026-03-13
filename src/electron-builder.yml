@@ -12,7 +12,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: fp-studio
+  executableName: FP Studio
 nsis:
   artifactName: ${productName}-${version}-setup.${ext}
   shortcutName: ${productName}
