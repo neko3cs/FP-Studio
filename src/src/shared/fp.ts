@@ -94,7 +94,27 @@ export const WEIGHT_TABLE: Record<FunctionType, Record<ComplexityLevel, number>>
   EIF: { Low: 5, Average: 7, High: 10 }
 }
 
-const COMPLEXITY_MATRIX: Record<FunctionType, readonly (readonly ComplexityLevel[])[]> = {
+export interface DifficultyRule {
+  functionType: FunctionType
+  det: readonly [number, number]
+  reference: readonly [number, number]
+}
+
+export const DIFFICULTY_RULES: readonly DifficultyRule[] = [
+  { functionType: 'EI', det: [5, 16], reference: [1, 2] },
+  { functionType: 'EO', det: [6, 20], reference: [1, 3] },
+  { functionType: 'EQ', det: [6, 20], reference: [1, 3] },
+  { functionType: 'ILF', det: [20, 51], reference: [1, 5] },
+  { functionType: 'EIF', det: [20, 51], reference: [1, 5] }
+] as const
+
+export const DIFFICULTY_RULES_BY_TYPE: Record<FunctionType, DifficultyRule> =
+  DIFFICULTY_RULES.reduce<Record<FunctionType, DifficultyRule>>((acc, rule) => {
+    acc[rule.functionType] = rule
+    return acc
+  }, {} as Record<FunctionType, DifficultyRule>)
+
+export const DIFFICULTY_MATRIX: Record<FunctionType, readonly (readonly ComplexityLevel[])[]> = {
   EI: [
     ['Low', 'Low', 'Average'],
     ['Low', 'Average', 'High'],
@@ -122,17 +142,6 @@ const COMPLEXITY_MATRIX: Record<FunctionType, readonly (readonly ComplexityLevel
   ]
 }
 
-const TRANSACTIONAL_DET_BUCKETS: Record<
-  Extract<FunctionType, 'EI' | 'EO' | 'EQ'>,
-  readonly [number, number]
-> = {
-  EI: [5, 16],
-  EO: [6, 20],
-  EQ: [6, 20]
-}
-
-const DATA_DET_BUCKETS: readonly [number, number] = [20, 51]
-
 function roundToTwoDecimals(value: number): number {
   return Math.round(value * 100) / 100
 }
@@ -146,19 +155,7 @@ export function getReferenceLabel(functionType: FunctionType): 'FTR' | 'RET' {
 }
 
 function getDetBucket(functionType: FunctionType, det: number): number {
-  if (isDataFunction(functionType)) {
-    if (det < DATA_DET_BUCKETS[0]) {
-      return 0
-    }
-
-    if (det < DATA_DET_BUCKETS[1]) {
-      return 1
-    }
-
-    return 2
-  }
-
-  const [mediumStart, highStart] = TRANSACTIONAL_DET_BUCKETS[functionType]
+  const [mediumStart, highStart] = DIFFICULTY_RULES_BY_TYPE[functionType].det
 
   if (det < mediumStart) {
     return 0
@@ -172,35 +169,13 @@ function getDetBucket(functionType: FunctionType, det: number): number {
 }
 
 function getReferenceBucket(functionType: FunctionType, referenceCount: number): number {
-  if (isDataFunction(functionType)) {
-    if (referenceCount <= 1) {
-      return 0
-    }
+  const [lowThreshold, highThreshold] = DIFFICULTY_RULES_BY_TYPE[functionType].reference
 
-    if (referenceCount <= 5) {
-      return 1
-    }
-
-    return 2
-  }
-
-  if (functionType === 'EI') {
-    if (referenceCount <= 1) {
-      return 0
-    }
-
-    if (referenceCount === 2) {
-      return 1
-    }
-
-    return 2
-  }
-
-  if (referenceCount <= 1) {
+  if (referenceCount <= lowThreshold) {
     return 0
   }
 
-  if (referenceCount <= 3) {
+  if (referenceCount <= highThreshold) {
     return 1
   }
 
@@ -214,7 +189,7 @@ export function analyzeFunctionPoint(
 ): FunctionPointAnalysis {
   const detBucket = getDetBucket(functionType, det)
   const referenceBucket = getReferenceBucket(functionType, referenceCount)
-  const difficulty = COMPLEXITY_MATRIX[functionType][referenceBucket][detBucket]
+  const difficulty = DIFFICULTY_MATRIX[functionType][referenceBucket][detBucket]
 
   return {
     difficulty,
