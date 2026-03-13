@@ -86,7 +86,7 @@ export interface FunctionPointAnalysis {
   functionPoints: number
 }
 
-const WEIGHT_TABLE: Record<FunctionType, Record<ComplexityLevel, number>> = {
+export const WEIGHT_TABLE: Record<FunctionType, Record<ComplexityLevel, number>> = {
   EI: { Low: 3, Average: 4, High: 6 },
   EO: { Low: 4, Average: 5, High: 7 },
   EQ: { Low: 3, Average: 4, High: 6 },

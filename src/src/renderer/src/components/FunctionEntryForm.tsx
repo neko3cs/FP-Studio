@@ -312,6 +312,7 @@ export function FunctionEntryForm({
       <Button
         aria-controls="function-entry-form-content"
         aria-expanded={isOpen}
+        aria-label={`${projectName} の機能を${isEditing ? '編集' : '追加'}`}
         appearance="subtle"
         className={styles.headerButton}
         data-testid="function-form-accordion-button"

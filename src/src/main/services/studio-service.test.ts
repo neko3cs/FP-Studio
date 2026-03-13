@@ -272,7 +272,7 @@ describe('createStudioService', () => {
         referenceCount: -1,
         note: ''
       })
-    ).toThrow('参照ファイル数は0以上の整数で入力してください。')
+    ).toThrow('FTR/RETは0以上の整数で入力してください。')
   })
 
   it('機能を更新する', () => {

@@ -22,7 +22,8 @@ export const STUDIO_CHANNELS = {
   deleteFunctionEntry: 'studio:delete-function-entry',
   getSettings: 'studio:get-settings',
   updateSettings: 'studio:update-settings',
-  updateProjectProductivity: 'studio:update-project-productivity'
+  updateProjectProductivity: 'studio:update-project-productivity',
+  exportProjectToExcel: 'studio:export-project-to-excel'
 } as const
 
 export const UPDATE_CHANNELS = {
@@ -62,6 +63,7 @@ export interface StudioApi {
   getSettings: () => Promise<StudioSettings>
   updateSettings: (input: UpdateSettingsInput) => Promise<StudioSettings>
   updateProjectProductivity: (input: UpdateProjectProductivityInput) => Promise<ProjectDetail>
+  exportProjectToExcel: (input: { projectId: string }) => Promise<void>
   getUpdateState: () => Promise<UpdateState>
   checkForUpdates: () => Promise<void>
   installUpdate: () => Promise<void>

@@ -14,7 +14,8 @@ describe('STUDIO_CHANNELS', () => {
       deleteFunctionEntry: 'studio:delete-function-entry',
       getSettings: 'studio:get-settings',
       updateSettings: 'studio:update-settings',
-      updateProjectProductivity: 'studio:update-project-productivity'
+      updateProjectProductivity: 'studio:update-project-productivity',
+      exportProjectToExcel: 'studio:export-project-to-excel'
     })
   })
 
