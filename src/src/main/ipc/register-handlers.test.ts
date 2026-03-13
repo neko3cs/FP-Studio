@@ -53,7 +53,8 @@ describe('registerStudioIpcHandlers', () => {
       })),
       updateProjectProductivity: vi.fn<StudioIpcHandlers['updateProjectProductivity']>(
         async () => projectDetail
-      )
+      ),
+      exportProjectToExcel: vi.fn<StudioIpcHandlers['exportProjectToExcel']>(async () => undefined)
     }
 
     registerStudioIpcHandlers(ipcMain, handlers)

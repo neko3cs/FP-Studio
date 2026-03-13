@@ -52,8 +52,8 @@ export function createStudioIpcHandlers(service: StudioService): StudioIpcHandle
 
       const workbook = buildProjectWorkbook(project)
       const defaultFilename = buildDefaultExportFileName(project.name)
-      const parentWindow = BrowserWindow.getFocusedWindow() ?? undefined
-      const { canceled, filePath } = await dialog.showSaveDialog(parentWindow, {
+      const parentWindow = BrowserWindow.getFocusedWindow()
+      const saveDialogOptions = {
         defaultPath: defaultFilename,
         filters: [
           {
@@ -62,7 +62,10 @@ export function createStudioIpcHandlers(service: StudioService): StudioIpcHandle
           }
         ],
         title: 'Excelへエクスポート'
-      })
+      }
+      const { canceled, filePath } = parentWindow
+        ? await dialog.showSaveDialog(parentWindow, saveDialogOptions)
+        : await dialog.showSaveDialog(saveDialogOptions)
 
       if (canceled || !filePath) {
         return
