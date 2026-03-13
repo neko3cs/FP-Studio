@@ -154,7 +154,6 @@ function App(): React.JSX.Element {
                 onCancel={actions.cancelEditingFunctionEntry}
                 preview={entryForm.preview}
                 projectName={selectedProject.name}
-                referenceLabel={entryForm.referenceLabel}
                 values={entryForm.values}
                 onFieldChange={entryForm.updateField}
                 onSubmit={actions.submitFunctionEntry}
