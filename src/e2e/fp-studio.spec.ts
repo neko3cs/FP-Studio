@@ -201,7 +201,8 @@ test.describe('FP Studio business scenarios', () => {
         )
       ).toBeVisible()
 
-      await app.page.getByRole('button', { name: '会計基盤更新 プロジェクトを削除' }).click()
+      await app.page.getByRole('button', { name: '会計基盤更新 のオプション' }).click()
+      await app.page.getByRole('menuitem', { name: '会計基盤更新 プロジェクトを削除' }).click()
       await expect(app.page.getByText('プロジェクトを削除しますか？')).toBeVisible()
       await app.page.getByRole('button', { name: '削除する' }).click()
       await expect(app.page.getByText('最初のプロジェクトを作成してください')).toBeVisible()

@@ -289,12 +289,14 @@ export function ProjectSidebar({
                         <MenuPopover className={styles.menuPopover}>
                           <MenuList className={styles.menuList}>
                             <MenuItem
+                              aria-label={`${project.name} をExcelへエクスポート`}
                               disabled={isBusy}
                               onClick={() => onExportProjectToExcel(project.id)}
                             >
                               Excelへエクスポート
                             </MenuItem>
                             <MenuItem
+                              aria-label={`${project.name} プロジェクトを削除`}
                               disabled={isBusy}
                               onClick={() => setProjectPendingDeletion(project)}
                             >
