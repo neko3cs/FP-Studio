@@ -191,6 +191,10 @@ const useStyles = makeStyles({
     flexWrap: 'wrap',
     gap: tokens.spacingHorizontalM
   },
+  sectionTitle: {
+    fontSize: '1rem',
+    lineHeight: 1.3
+  },
   previewBadge: {
     maxWidth: '100%'
   },
@@ -314,8 +318,8 @@ export function FunctionEntryForm({
         onClick={() => setIsCollapsed((current) => !current)}
       >
         <div className={styles.headerContent}>
-          <Title3 as="h3">
-            {isEditing ? `${projectName} の機能を編集` : `${projectName} に機能を追加`}
+          <Title3 as="h3" className={styles.sectionTitle}>
+            {isEditing ? '機能を編集' : '機能を追加'}
           </Title3>
           <Badge
             appearance="outline"
