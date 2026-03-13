@@ -45,7 +45,7 @@ describe('useFunctionEntryForm', () => {
     expect(result.current.canSubmit).toBe(false)
   })
 
-  it('参照ファイル数が不正でも submit 不可になる', () => {
+  it('FTR/RETが不正でも submit 不可になる', () => {
     const { result } = renderHook(() => useFunctionEntryForm())
 
     act(() => {

@@ -125,6 +125,7 @@ function App(): React.JSX.Element {
           selectedProjectId={selectedProjectId}
           onCreateProject={actions.createProject}
           onDeleteProject={actions.deleteProject}
+          onExportProjectToExcel={actions.exportProjectToExcel}
           onProjectFieldChange={projectForm.updateField}
           onSelectProject={actions.selectProject}
         />

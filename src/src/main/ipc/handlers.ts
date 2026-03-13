@@ -11,6 +11,9 @@ import type {
   UpdateProjectProductivityInput,
   UpdateSettingsInput
 } from '@shared/fp'
+import { BrowserWindow, dialog } from 'electron'
+
+import { buildDefaultExportFileName, buildProjectWorkbook } from '../export/project-excel'
 
 import type { StudioService } from '../services/studio-service'
 
@@ -25,6 +28,7 @@ export interface StudioIpcHandlers {
   getSettings: () => Promise<StudioSettings>
   updateSettings: (input: UpdateSettingsInput) => Promise<StudioSettings>
   updateProjectProductivity: (input: UpdateProjectProductivityInput) => Promise<ProjectDetail>
+  exportProjectToExcel: (input: { projectId: string }) => Promise<void>
 }
 
 export function createStudioIpcHandlers(service: StudioService): StudioIpcHandlers {
@@ -38,6 +42,33 @@ export function createStudioIpcHandlers(service: StudioService): StudioIpcHandle
     deleteFunctionEntry: async (input) => service.deleteFunctionEntry(input),
     getSettings: async () => service.getSettings(),
     updateSettings: async (input) => service.updateSettings(input),
-    updateProjectProductivity: async (input) => service.updateProjectProductivity(input)
+    updateProjectProductivity: async (input) => service.updateProjectProductivity(input),
+    exportProjectToExcel: async (input) => {
+      const project = service.getProjectDetail(input.projectId)
+
+      if (!project) {
+        throw new Error('対象のプロジェクトが見つかりません。')
+      }
+
+      const workbook = buildProjectWorkbook(project)
+      const defaultFilename = buildDefaultExportFileName(project.name)
+      const parentWindow = BrowserWindow.getFocusedWindow() ?? undefined
+      const { canceled, filePath } = await dialog.showSaveDialog(parentWindow, {
+        defaultPath: defaultFilename,
+        filters: [
+          {
+            name: 'Excel Workbook',
+            extensions: ['xlsx']
+          }
+        ],
+        title: 'Excelへエクスポート'
+      })
+
+      if (canceled || !filePath) {
+        return
+      }
+
+      await workbook.xlsx.writeFile(filePath)
+    }
   }
 }

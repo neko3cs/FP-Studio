@@ -34,7 +34,8 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@fluentui/react-components": "^9.73.3",
     "better-sqlite3": "^12.6.2",
-    "drizzle-orm": "^0.45.1"
+    "drizzle-orm": "^0.45.1",
+    "exceljs": "^4.4.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",

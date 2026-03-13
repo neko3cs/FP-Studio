@@ -15,6 +15,12 @@ import {
   Input,
   makeStyles,
   mergeClasses,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+  MenuPopover,
+  MenuTrigger,
   Textarea,
   tokens
 } from '@fluentui/react-components'
@@ -32,6 +38,7 @@ interface ProjectSidebarProps {
   onCreateProject: () => void
   onSelectProject: (projectId: string) => void
   onDeleteProject: (projectId: string) => void
+  onExportProjectToExcel: (projectId: string) => void
 }
 
 const useStyles = makeStyles({
@@ -129,10 +136,26 @@ const useStyles = makeStyles({
     whiteSpace: 'nowrap',
     alignSelf: 'flex-start'
   },
-  deleteButton: {
-    justifyContent: 'flex-start',
-    paddingLeft: '0',
-    color: tokens.colorPaletteRedForeground2
+  projectHeaderActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS
+  },
+  menuButton: {
+    minWidth: '0',
+    padding: '2px 6px'
+  },
+  menuPopover: {
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground2,
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+    padding: 0,
+    boxShadow: tokens.shadow8
+  },
+  menuList: {
+    minWidth: '160px',
+    margin: 0,
+    padding: 0
   },
   dialogContent: {
     whiteSpace: 'pre-wrap',
@@ -149,7 +172,8 @@ export function ProjectSidebar({
   onProjectFieldChange,
   onCreateProject,
   onSelectProject,
-  onDeleteProject
+  onDeleteProject,
+  onExportProjectToExcel
 }: ProjectSidebarProps): React.JSX.Element {
   const styles = useStyles()
   const [projectPendingDeletion, setProjectPendingDeletion] = useState<ProjectSummary | null>(null)
@@ -227,18 +251,21 @@ export function ProjectSidebar({
                   )}
                   data-testid={`project-card-${project.id}`}
                 >
-                  <Button
-                    appearance="subtle"
-                    className={styles.selectButton}
-                    onClick={() => onSelectProject(project.id)}
-                  >
-                    <div className={styles.projectHeader}>
+                  <div className={styles.projectHeader}>
+                    <Button
+                      appearance="subtle"
+                      className={styles.selectButton}
+                      onClick={() => onSelectProject(project.id)}
+                    >
                       <div className={styles.projectInfo}>
                         <Body1Strong>{project.name}</Body1Strong>
                         <Body2 className={styles.projectDescription}>
                           {project.description || '説明なし'}
                         </Body2>
                       </div>
+                    </Button>
+
+                    <div className={styles.projectHeaderActions}>
                       <Badge
                         appearance="tint"
                         className={styles.totalBadge}
@@ -247,23 +274,42 @@ export function ProjectSidebar({
                       >
                         {project.totalFunctionPoints} UFP
                       </Badge>
+
+                      <Menu inline>
+                        <MenuTrigger>
+                          <MenuButton
+                            appearance="subtle"
+                            aria-label={`${project.name} のオプション`}
+                            className={styles.menuButton}
+                            disabled={isBusy}
+                          >
+                            ⋯
+                          </MenuButton>
+                        </MenuTrigger>
+                        <MenuPopover className={styles.menuPopover}>
+                          <MenuList className={styles.menuList}>
+                            <MenuItem
+                              disabled={isBusy}
+                              onClick={() => onExportProjectToExcel(project.id)}
+                            >
+                              Excelへエクスポート
+                            </MenuItem>
+                            <MenuItem
+                              disabled={isBusy}
+                              onClick={() => setProjectPendingDeletion(project)}
+                            >
+                              このプロジェクトを削除
+                            </MenuItem>
+                          </MenuList>
+                        </MenuPopover>
+                      </Menu>
                     </div>
-                  </Button>
+                  </div>
 
                   <div className={styles.projectMeta}>
                     <Caption1>{project.functionCount} 機能</Caption1>
                     <Caption1>{project.estimatedEffortDays} 人日</Caption1>
                   </div>
-
-                  <Button
-                    aria-label={`${project.name} プロジェクトを削除`}
-                    appearance="subtle"
-                    className={styles.deleteButton}
-                    disabled={isBusy}
-                    onClick={() => setProjectPendingDeletion(project)}
-                  >
-                    このプロジェクトを削除
-                  </Button>
                 </Card>
               )
             })
