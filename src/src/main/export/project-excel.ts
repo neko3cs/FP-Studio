@@ -13,14 +13,6 @@ const ENTRIES_SHEET_NAME = 'Function Entries'
 const WEIGHTS_SHEET_NAME = 'Weights'
 const DIFFICULTY_RULES_SHEET_NAME = 'Difficulty Rules'
 
-const DIFFICULTY_RULES = [
-  ['EI', 5, 16, 1, 2],
-  ['EO', 6, 20, 1, 3],
-  ['EQ', 6, 20, 1, 3],
-  ['ILF', 20, 51, 1, 5],
-  ['EIF', 20, 51, 1, 5]
-] as const
-
 function quoteSheet(name: string): string {
   return `'${name}'`
 }
