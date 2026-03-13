@@ -1,7 +1,12 @@
 import ExcelJS from 'exceljs'
 
 import type { ProjectDetail } from '@shared/fp'
-import { COMPLEXITY_LEVELS, FUNCTION_TYPES, WEIGHT_TABLE } from '@shared/fp'
+import {
+  COMPLEXITY_LEVELS,
+  DIFFICULTY_RULES,
+  FUNCTION_TYPES,
+  WEIGHT_TABLE
+} from '@shared/fp'
 
 const SUMMARY_SHEET_NAME = 'Summary'
 const ENTRIES_SHEET_NAME = 'Function Entries'
@@ -21,23 +26,36 @@ function quoteSheet(name: string): string {
 }
 
 const ENTRIES_FP_RANGE = `${quoteSheet(ENTRIES_SHEET_NAME)}!H2:H1048576`
+const WEIGHTS_START_ROW = 2
+const DIFFICULTY_RULES_START_ROW = 2
+const DIFFICULTY_RULES_END_ROW =
+  DIFFICULTY_RULES_START_ROW + DIFFICULTY_RULES.length - 1
 
 function getWeightFormula(rowNumber: number): string {
-  const weightsStartRow = 2
-  const weightsEndRow = weightsStartRow + FUNCTION_TYPES.length - 1
-  return `INDEX(${quoteSheet(WEIGHTS_SHEET_NAME)}!$B$${weightsStartRow}:$D$${weightsEndRow}, MATCH(C${rowNumber}, ${quoteSheet(
+  const weightsEndRow = WEIGHTS_START_ROW + FUNCTION_TYPES.length - 1
+  return `INDEX(${quoteSheet(WEIGHTS_SHEET_NAME)}!$B$${WEIGHTS_START_ROW}:$D$${weightsEndRow}, MATCH(C${rowNumber}, ${quoteSheet(
     WEIGHTS_SHEET_NAME
-  )}!$A$${weightsStartRow}:$A$${weightsEndRow}, 0), MATCH(F${rowNumber}, ${quoteSheet(
+  )}!$A$${WEIGHTS_START_ROW}:$A$${weightsEndRow}, 0), MATCH(F${rowNumber}, ${quoteSheet(
     WEIGHTS_SHEET_NAME
   )}!$B$1:$D$1, 0))`
 }
 
 function getDifficultyFormula(rowNumber: number): string {
-  const typeRange = `${quoteSheet(DIFFICULTY_RULES_SHEET_NAME)}!$A$2:$A$6`
-  const detBounds = `${quoteSheet(DIFFICULTY_RULES_SHEET_NAME)}!$B$2:$B$6`
-  const detBoundsHigh = `${quoteSheet(DIFFICULTY_RULES_SHEET_NAME)}!$C$2:$C$6`
-  const referenceBounds = `${quoteSheet(DIFFICULTY_RULES_SHEET_NAME)}!$D$2:$D$6`
-  const referenceBoundsHigh = `${quoteSheet(DIFFICULTY_RULES_SHEET_NAME)}!$E$2:$E$6`
+  const typeRange = `${quoteSheet(
+    DIFFICULTY_RULES_SHEET_NAME
+  )}!$A$${DIFFICULTY_RULES_START_ROW}:$A$${DIFFICULTY_RULES_END_ROW}`
+  const detBounds = `${quoteSheet(
+    DIFFICULTY_RULES_SHEET_NAME
+  )}!$B$${DIFFICULTY_RULES_START_ROW}:$B$${DIFFICULTY_RULES_END_ROW}`
+  const detBoundsHigh = `${quoteSheet(
+    DIFFICULTY_RULES_SHEET_NAME
+  )}!$C$${DIFFICULTY_RULES_START_ROW}:$C$${DIFFICULTY_RULES_END_ROW}`
+  const referenceBounds = `${quoteSheet(
+    DIFFICULTY_RULES_SHEET_NAME
+  )}!$D$${DIFFICULTY_RULES_START_ROW}:$D$${DIFFICULTY_RULES_END_ROW}`
+  const referenceBoundsHigh = `${quoteSheet(
+    DIFFICULTY_RULES_SHEET_NAME
+  )}!$E$${DIFFICULTY_RULES_START_ROW}:$E$${DIFFICULTY_RULES_END_ROW}`
 
   return `LET(
 fnType, C${rowNumber},
@@ -165,7 +183,13 @@ export function buildProjectWorkbook(project: ProjectDetail): ExcelJS.Workbook {
   ]
   difficultySheet.getRow(1).font = { bold: true }
   DIFFICULTY_RULES.forEach((rule) => {
-    difficultySheet.addRow(rule)
+    difficultySheet.addRow([
+      rule.functionType,
+      rule.det[0],
+      rule.det[1],
+      rule.reference[0],
+      rule.reference[1]
+    ])
   })
 
   return workbook
