@@ -1,4 +1,11 @@
-import { Body1Strong, Caption1, Card, makeStyles, tokens } from '@fluentui/react-components'
+import {
+  Body1Strong,
+  Caption1,
+  Card,
+  makeStyles,
+  mergeClasses,
+  tokens
+} from '@fluentui/react-components'
 
 import type { ProjectDetail } from '@shared/fp'
 
@@ -20,6 +27,14 @@ const useStyles = makeStyles({
     paddingBottom: tokens.spacingVerticalM,
     paddingLeft: tokens.spacingHorizontalL,
     gap: tokens.spacingVerticalXS
+  },
+  projectNameCard: {
+    gridColumn: '1 / -1'
+  },
+  projectName: {
+    fontSize: '1.25rem',
+    lineHeight: 1.25,
+    wordBreak: 'break-word'
   },
   value: {
     fontSize: '1.5rem',
@@ -49,6 +64,15 @@ export function ProjectSummaryCards({ project }: ProjectSummaryCardsProps): Reac
 
   return (
     <div className={styles.grid}>
+      <Card
+        appearance="filled-alternative"
+        className={mergeClasses(styles.card, styles.projectNameCard)}
+      >
+        <Caption1>プロジェクト名</Caption1>
+        <Body1Strong className={styles.projectName} data-testid="summary-project-name">
+          {project.name}
+        </Body1Strong>
+      </Card>
       {cards.map((card) => (
         <Card key={card.label} appearance="filled-alternative" className={styles.card}>
           <Caption1>{card.label}</Caption1>
