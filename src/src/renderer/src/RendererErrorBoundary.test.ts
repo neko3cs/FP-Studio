@@ -3,11 +3,8 @@ import { act, cleanup, render, screen } from '@testing-library/react'
 import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  RendererErrorBoundary,
-  normalizeError,
-  reloadRenderer
-} from './RendererErrorBoundary'
+import { RendererErrorBoundary } from './RendererErrorBoundary'
+import { normalizeError, reloadRenderer } from './rendererErrorUtils'
 
 function renderWithProvider(element: React.ReactElement): void {
   render(React.createElement(FluentProvider, { theme: webLightTheme }, element))

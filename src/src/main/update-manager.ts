@@ -110,7 +110,8 @@ export class UpdateManager {
     } catch (error) {
       this.setState({
         status: 'error',
-        message: error instanceof Error ? error.message : 'アップデートの確認でエラーが発生しました。'
+        message:
+          error instanceof Error ? error.message : 'アップデートの確認でエラーが発生しました。'
       })
     }
   }

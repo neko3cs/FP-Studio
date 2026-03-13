@@ -12,6 +12,7 @@ describe('registerStudioIpcHandlers', () => {
       id: 'p1',
       name: '案件A',
       description: '',
+      productivity: 1,
       functionCount: 0,
       totalFunctionPoints: 0,
       estimatedEffortDays: 0,
@@ -49,7 +50,10 @@ describe('registerStudioIpcHandlers', () => {
       getSettings: vi.fn<StudioIpcHandlers['getSettings']>(async () => settings),
       updateSettings: vi.fn<StudioIpcHandlers['updateSettings']>(async (input) => ({
         defaultProductivity: input.defaultProductivity
-      }))
+      })),
+      updateProjectProductivity: vi.fn<StudioIpcHandlers['updateProjectProductivity']>(
+        async () => projectDetail
+      )
     }
 
     registerStudioIpcHandlers(ipcMain, handlers)
@@ -88,6 +92,15 @@ describe('registerStudioIpcHandlers', () => {
     await expect(
       registeredHandlers.get(STUDIO_CHANNELS.updateSettings)?.({}, { defaultProductivity: 1.25 })
     ).resolves.toEqual({ defaultProductivity: 1.25 })
+    await expect(
+      registeredHandlers.get(STUDIO_CHANNELS.updateProjectProductivity)?.(
+        {},
+        {
+          projectId: 'p1',
+          productivity: 1.5
+        }
+      )
+    ).resolves.toEqual(projectDetail)
 
     expect(handlers.listProjects).toHaveBeenCalledTimes(1)
     expect(handlers.getProject).toHaveBeenCalledWith({ projectId: 'p1' })
@@ -98,5 +111,9 @@ describe('registerStudioIpcHandlers', () => {
     expect(handlers.deleteFunctionEntry).toHaveBeenCalledWith({ entryId: 'f1' })
     expect(handlers.getSettings).toHaveBeenCalledTimes(1)
     expect(handlers.updateSettings).toHaveBeenCalledWith({ defaultProductivity: 1.25 })
+    expect(handlers.updateProjectProductivity).toHaveBeenCalledWith({
+      projectId: 'p1',
+      productivity: 1.5
+    })
   })
 })

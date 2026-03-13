@@ -10,7 +10,7 @@ import {
 } from '@shared/ipc'
 
 const subscribeToUpdateState = (listener: (state: UpdateState) => void): (() => void) => {
-  const handler = (_event: IpcRendererEvent, state: UpdateState) => listener(state)
+  const handler = (_event: IpcRendererEvent, state: UpdateState): void => listener(state)
   ipcRenderer.on(UPDATE_EVENTS.stateChanged, handler)
 
   return () => {
@@ -28,6 +28,8 @@ const studioApi: StudioApi = {
   deleteFunctionEntry: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.deleteFunctionEntry, input),
   getSettings: () => ipcRenderer.invoke(STUDIO_CHANNELS.getSettings),
   updateSettings: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.updateSettings, input),
+  updateProjectProductivity: (input) =>
+    ipcRenderer.invoke(STUDIO_CHANNELS.updateProjectProductivity, input),
   getUpdateState: () => ipcRenderer.invoke(UPDATE_CHANNELS.getUpdateState),
   checkForUpdates: () => ipcRenderer.invoke(UPDATE_CHANNELS.checkForUpdates),
   installUpdate: () => ipcRenderer.invoke(UPDATE_CHANNELS.installUpdate),

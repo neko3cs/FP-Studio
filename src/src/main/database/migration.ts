@@ -3,7 +3,7 @@ import { join } from 'path'
 
 import type Database from 'better-sqlite3'
 
-export const CURRENT_SCHEMA_VERSION = '1.0.0'
+export const CURRENT_SCHEMA_VERSION = '1.1.0'
 const MIGRATION_TABLES = ['projects', 'function_entries', 'settings'] as const
 
 interface ExportedTables {
@@ -24,7 +24,8 @@ const CREATE_TABLES_SQL = `
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    productivity REAL NOT NULL DEFAULT 1
   );
 
   CREATE TABLE IF NOT EXISTS function_entries (
@@ -75,7 +76,7 @@ function fetchTableRows(native: Database.Database, tableName: string): Record<st
     return []
   }
 
-  return native.prepare(`SELECT * FROM ${tableName}`).all()
+  return native.prepare(`SELECT * FROM ${tableName}`).all() as Record<string, unknown>[]
 }
 
 function dropTables(native: Database.Database): void {
@@ -113,8 +114,8 @@ function writeBackup(appDirectory: string, backup: MigrationBackup): string {
 
 function importTables(native: Database.Database, backup: MigrationBackup): void {
   const insertProject = native.prepare(
-    `INSERT INTO projects (id, name, description, created_at, updated_at)
-     VALUES (@id, @name, @description, @created_at, @updated_at)`
+    `INSERT INTO projects (id, name, description, created_at, updated_at, productivity)
+     VALUES (@id, @name, @description, @created_at, @updated_at, @productivity)`
   )
 
   const insertFunctionEntry = native.prepare(
@@ -129,7 +130,26 @@ function importTables(native: Database.Database, backup: MigrationBackup): void 
 
   const importTransaction = native.transaction(() => {
     for (const row of backup.tables.projects) {
-      insertProject.run(row)
+      const rawProductivity = row['productivity']
+      const parsedProductivity =
+        typeof rawProductivity === 'number'
+          ? rawProductivity
+          : typeof rawProductivity === 'string'
+            ? Number(rawProductivity)
+            : undefined
+      const productivity =
+        typeof parsedProductivity === 'number' && Number.isFinite(parsedProductivity)
+          ? parsedProductivity
+          : 1
+
+      insertProject.run({
+        id: String(row.id),
+        name: String(row.name),
+        description: String(row.description),
+        created_at: String(row.created_at),
+        updated_at: String(row.updated_at),
+        productivity
+      })
     }
 
     for (const row of backup.tables.function_entries) {
@@ -149,8 +169,10 @@ function readSchemaVersion(native: Database.Database): string | null {
     return null
   }
 
-  const row = native.prepare('SELECT version FROM schema_version WHERE id = 1').get()
-  return (row?.version as string | undefined) ?? null
+  const row = native.prepare('SELECT version FROM schema_version WHERE id = 1').get() as
+    | { version: string }
+    | undefined
+  return row?.version ?? null
 }
 
 function setSchemaVersion(native: Database.Database, version: string): void {

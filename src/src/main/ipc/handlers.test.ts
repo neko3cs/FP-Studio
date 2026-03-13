@@ -11,6 +11,7 @@ describe('createStudioIpcHandlers', () => {
       id: 'p1',
       name: 'A',
       description: '',
+      productivity: 1,
       functionCount: 0,
       totalFunctionPoints: 0,
       estimatedEffortDays: 0,
@@ -35,7 +36,10 @@ describe('createStudioIpcHandlers', () => {
       updateFunctionEntry: vi.fn<StudioService['updateFunctionEntry']>(() => projectDetail),
       deleteFunctionEntry: vi.fn<StudioService['deleteFunctionEntry']>(() => projectDetail),
       getSettings: vi.fn<StudioService['getSettings']>(() => settings),
-      updateSettings: vi.fn((input) => input)
+      updateSettings: vi.fn((input) => input),
+      updateProjectProductivity: vi.fn<StudioService['updateProjectProductivity']>(
+        () => projectDetail
+      )
     }
 
     const handlers = createStudioIpcHandlers(service)
@@ -71,6 +75,7 @@ describe('createStudioIpcHandlers', () => {
     ).resolves.toEqual(projectDetail)
     await expect(handlers.getSettings()).resolves.toEqual(settings)
     await handlers.updateSettings({ defaultProductivity: 1.25 })
+    await handlers.updateProjectProductivity({ projectId: 'p1', productivity: 1.5 })
 
     expect(service.listProjects).toHaveBeenCalledTimes(1)
     expect(service.getProjectDetail).toHaveBeenCalledWith('p1')
@@ -99,5 +104,9 @@ describe('createStudioIpcHandlers', () => {
     })
     expect(service.getSettings).toHaveBeenCalledTimes(1)
     expect(service.updateSettings).toHaveBeenCalledWith({ defaultProductivity: 1.25 })
+    expect(service.updateProjectProductivity).toHaveBeenCalledWith({
+      projectId: 'p1',
+      productivity: 1.5
+    })
   })
 })
