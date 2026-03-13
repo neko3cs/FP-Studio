@@ -2,18 +2,12 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "testRunner": "vitest",
   "packageManager": "pnpm",
-  "plugins": [
-    "@stryker-mutator/vitest-runner"
-  ],
+  "plugins": ["@stryker-mutator/vitest-runner"],
   "coverageAnalysis": "perTest",
   "ignoreStatic": true,
   "allowEmpty": false,
   "tempDirName": ".stryker-tmp",
-  "reporters": [
-    "clear-text",
-    "progress",
-    "html"
-  ],
+  "reporters": ["clear-text", "progress", "html"],
   "thresholds": {
     "high": 80,
     "low": 60,
@@ -29,15 +23,9 @@
     "src/renderer/src/RendererErrorBoundary.tsx",
     "src/renderer/src/hooks/useFunctionEntryForm.ts",
     "src/renderer/src/hooks/useProjectForm.ts",
-    "src/renderer/src/hooks/useSettingsForm.ts"
+    "src/renderer/src/hooks/useProjectProductivityForm.ts"
   ],
-  "ignorePatterns": [
-    "coverage",
-    "dist",
-    "out",
-    "reports",
-    "playwright-report"
-  ],
+  "ignorePatterns": ["coverage", "dist", "out", "reports", "playwright-report"],
   "vitest": {
     "configFile": "vitest.config.ts",
     "related": true

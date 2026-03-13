@@ -13,7 +13,8 @@ describe('STUDIO_CHANNELS', () => {
       updateFunctionEntry: 'studio:update-function-entry',
       deleteFunctionEntry: 'studio:delete-function-entry',
       getSettings: 'studio:get-settings',
-      updateSettings: 'studio:update-settings'
+      updateSettings: 'studio:update-settings',
+      updateProjectProductivity: 'studio:update-project-productivity'
     })
   })
 

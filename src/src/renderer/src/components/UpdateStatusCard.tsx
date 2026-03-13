@@ -1,11 +1,4 @@
-import {
-  Body2,
-  Button,
-  Card,
-  makeStyles,
-  Text,
-  tokens
-} from '@fluentui/react-components'
+import { Body2, Button, Card, makeStyles, Text, tokens } from '@fluentui/react-components'
 
 import type { UpdateState } from '@shared/ipc'
 

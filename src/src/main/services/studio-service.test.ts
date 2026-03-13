@@ -16,6 +16,7 @@ function createRepositoryMock(): Mocked<StudioRepository> {
     deleteFunctionEntry: vi.fn<StudioRepository['deleteFunctionEntry']>(),
     getSettings: vi.fn<StudioRepository['getSettings']>(),
     setDefaultProductivity: vi.fn<StudioRepository['setDefaultProductivity']>(),
+    setProjectProductivity: vi.fn<StudioRepository['setProjectProductivity']>(),
     close: vi.fn<StudioRepository['close']>()
   }
 
@@ -45,7 +46,8 @@ describe('createStudioService', () => {
         name: '案件A',
         description: '説明',
         createdAt: '2025-12-31T00:00:00.000Z',
-        updatedAt: '2025-12-31T00:00:00.000Z'
+        updatedAt: '2025-12-31T00:00:00.000Z',
+        productivity: 1.5
       }
     ])
     repository.listFunctionEntries.mockReturnValue([
@@ -73,6 +75,7 @@ describe('createStudioService', () => {
         description: '説明',
         createdAt: '2025-12-31T00:00:00.000Z',
         updatedAt: '2025-12-31T00:00:00.000Z',
+        productivity: 1.5,
         functionCount: 1,
         totalFunctionPoints: 4,
         estimatedEffortDays: 6
@@ -101,6 +104,7 @@ describe('createStudioService', () => {
       description: '説明',
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
+      productivity: 1.25,
       functionCount: 0,
       totalFunctionPoints: 0,
       estimatedEffortDays: 0,
@@ -111,7 +115,8 @@ describe('createStudioService', () => {
       name: '新規案件',
       description: '説明',
       createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z'
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      productivity: 1.25
     })
   })
 
@@ -141,7 +146,8 @@ describe('createStudioService', () => {
       name: '案件A',
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
-      updatedAt: '2025-12-31T00:00:00.000Z'
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 2
     })
     repository.listFunctionEntries.mockReturnValue([
       {
@@ -177,6 +183,7 @@ describe('createStudioService', () => {
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
+      productivity: 2,
       functionCount: 1,
       totalFunctionPoints: 4,
       estimatedEffortDays: 8,
@@ -240,7 +247,8 @@ describe('createStudioService', () => {
       name: '案件A',
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
-      updatedAt: '2025-12-31T00:00:00.000Z'
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
     })
 
     const service = createStudioService(repository)
@@ -274,7 +282,8 @@ describe('createStudioService', () => {
       name: '案件A',
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
-      updatedAt: '2025-12-31T00:00:00.000Z'
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
     })
     repository.listFunctionEntries
       .mockReturnValueOnce([
@@ -327,6 +336,7 @@ describe('createStudioService', () => {
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
+      productivity: 1,
       functionCount: 1,
       totalFunctionPoints: 7,
       estimatedEffortDays: 7,
@@ -368,7 +378,8 @@ describe('createStudioService', () => {
       name: '案件A',
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
-      updatedAt: '2025-12-31T00:00:00.000Z'
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
     })
     repository.listFunctionEntries.mockReturnValue([])
 
@@ -394,7 +405,8 @@ describe('createStudioService', () => {
       name: '案件A',
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
-      updatedAt: '2025-12-31T00:00:00.000Z'
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
     })
     repository.listFunctionEntries
       .mockReturnValueOnce([
@@ -423,6 +435,7 @@ describe('createStudioService', () => {
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
+      productivity: 1,
       functionCount: 0,
       totalFunctionPoints: 0,
       estimatedEffortDays: 0,
@@ -438,7 +451,8 @@ describe('createStudioService', () => {
       name: '案件A',
       description: '',
       createdAt: '2025-12-31T00:00:00.000Z',
-      updatedAt: '2025-12-31T00:00:00.000Z'
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
     })
     repository.listFunctionEntries.mockReturnValue([])
 
@@ -447,6 +461,34 @@ describe('createStudioService', () => {
     expect(() =>
       service.deleteFunctionEntry({ projectId: 'project-1', entryId: 'missing' })
     ).toThrow('削除対象の機能が見つかりません。')
+  })
+
+  it('プロジェクトの生産性を更新する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries.mockReturnValue([])
+    repository.getSettings.mockReturnValue({ defaultProductivity: 1 })
+
+    const service = createStudioService(repository)
+
+    const detail = service.updateProjectProductivity({
+      projectId: 'project-1',
+      productivity: 2.456
+    })
+
+    expect(detail.productivity).toBe(2.46)
+    expect(repository.setProjectProductivity).toHaveBeenCalledWith(
+      'project-1',
+      2.46,
+      '2026-01-01T00:00:00.000Z'
+    )
   })
 
   it('設定値を更新して小数第2位に丸める', () => {
