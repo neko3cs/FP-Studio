@@ -2,6 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vi
 
 import { createStudioService } from './studio-service'
 import type { StudioRepository } from '../repositories/studio-repository'
+import {
+  DEFAULT_STUDIO_SETTINGS,
+  type StudioSettings,
+  type DifficultyRule,
+  type WeightTable
+} from '@shared/fp'
 
 function createRepositoryMock(): Mocked<StudioRepository> {
   const repository: Mocked<StudioRepository> = {
@@ -16,11 +22,22 @@ function createRepositoryMock(): Mocked<StudioRepository> {
     deleteFunctionEntry: vi.fn<StudioRepository['deleteFunctionEntry']>(),
     getSettings: vi.fn<StudioRepository['getSettings']>(),
     setDefaultProductivity: vi.fn<StudioRepository['setDefaultProductivity']>(),
+    setDifficultyRules: vi.fn<StudioRepository['setDifficultyRules']>(),
+    setWeightTable: vi.fn<StudioRepository['setWeightTable']>(),
     setProjectProductivity: vi.fn<StudioRepository['setProjectProductivity']>(),
     close: vi.fn<StudioRepository['close']>()
   }
 
   return repository
+}
+
+function createTestSettings(overrides: Partial<StudioSettings> = {}): StudioSettings {
+  return {
+    defaultProductivity:
+      overrides.defaultProductivity ?? DEFAULT_STUDIO_SETTINGS.defaultProductivity,
+    difficultyRules: overrides.difficultyRules ?? DEFAULT_STUDIO_SETTINGS.difficultyRules,
+    weightTable: overrides.weightTable ?? DEFAULT_STUDIO_SETTINGS.weightTable
+  }
 }
 
 describe('createStudioService', () => {
@@ -39,7 +56,7 @@ describe('createStudioService', () => {
 
   it('一覧取得時に設定値を用いてプロジェクト集計を返す', () => {
     const repository = createRepositoryMock()
-    repository.getSettings.mockReturnValue({ defaultProductivity: 1.5 })
+    repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 1.5 }))
     repository.listProjects.mockReturnValue([
       {
         id: 'project-1',
@@ -94,7 +111,7 @@ describe('createStudioService', () => {
 
   it('プロジェクトを作成し、入力を trim した詳細を返す', () => {
     const repository = createRepositoryMock()
-    repository.getSettings.mockReturnValue({ defaultProductivity: 1.25 })
+    repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 1.25 }))
 
     const service = createStudioService(repository)
 
@@ -164,7 +181,7 @@ describe('createStudioService', () => {
         updatedAt: '2026-01-01T00:00:00.000Z'
       }
     ])
-    repository.getSettings.mockReturnValue({ defaultProductivity: 2 })
+    repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 2 }))
 
     const service = createStudioService(repository)
 
@@ -316,7 +333,7 @@ describe('createStudioService', () => {
           updatedAt: '2026-01-01T00:00:00.000Z'
         }
       ])
-    repository.getSettings.mockReturnValue({ defaultProductivity: 1 })
+    repository.getSettings.mockReturnValue(createTestSettings())
 
     const service = createStudioService(repository)
 
@@ -425,7 +442,7 @@ describe('createStudioService', () => {
         }
       ])
       .mockReturnValueOnce([])
-    repository.getSettings.mockReturnValue({ defaultProductivity: 1.25 })
+    repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 1.25 }))
 
     const service = createStudioService(repository)
 
@@ -474,7 +491,7 @@ describe('createStudioService', () => {
       productivity: 1
     })
     repository.listFunctionEntries.mockReturnValue([])
-    repository.getSettings.mockReturnValue({ defaultProductivity: 1 })
+    repository.getSettings.mockReturnValue(createTestSettings())
 
     const service = createStudioService(repository)
 
@@ -493,14 +510,13 @@ describe('createStudioService', () => {
 
   it('設定値を更新して小数第2位に丸める', () => {
     const repository = createRepositoryMock()
-    repository.getSettings.mockReturnValue({ defaultProductivity: 1.23 })
+    repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 1.23 }))
 
     const service = createStudioService(repository)
+    const baseline = createTestSettings({ defaultProductivity: 1.23 })
 
-    expect(service.getSettings()).toEqual({ defaultProductivity: 1.23 })
-    expect(service.updateSettings({ defaultProductivity: 1.234 })).toEqual({
-      defaultProductivity: 1.23
-    })
+    expect(service.getSettings()).toEqual(baseline)
+    expect(service.updateSettings({ defaultProductivity: 1.234 })).toEqual(baseline)
     expect(repository.setDefaultProductivity).toHaveBeenCalledWith(1.23)
   })
 
@@ -513,5 +529,32 @@ describe('createStudioService', () => {
     expect(() => service.updateSettings({ defaultProductivity: Number.NaN })).toThrow(
       '生産性は0より大きい数値で入力してください。'
     )
+  })
+
+  it('難易度ルールと重みを同時に変更できる', () => {
+    const repository = createRepositoryMock()
+    repository.getSettings.mockReturnValue(createTestSettings())
+    const rules: DifficultyRule[] = DEFAULT_STUDIO_SETTINGS.difficultyRules.map((rule) => ({
+      functionType: rule.functionType,
+      det: [rule.det[0] + 1, rule.det[1] + 1],
+      reference: [rule.reference[0] + 1, rule.reference[1] + 1]
+    }))
+    const weight: WeightTable = {
+      ...DEFAULT_STUDIO_SETTINGS.weightTable,
+      EI: {
+        ...DEFAULT_STUDIO_SETTINGS.weightTable.EI,
+        Low: DEFAULT_STUDIO_SETTINGS.weightTable.EI.Low + 1
+      }
+    }
+
+    const service = createStudioService(repository)
+
+    service.updateSettings({
+      difficultyRules: rules,
+      weightTable: weight
+    })
+
+    expect(repository.setDifficultyRules).toHaveBeenCalledWith(rules)
+    expect(repository.setWeightTable).toHaveBeenCalledWith(weight)
   })
 })

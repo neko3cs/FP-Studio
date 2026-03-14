@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import type { FunctionEntry, ProjectDetail, ProjectSummary } from '@shared/fp'
+import { DEFAULT_STUDIO_SETTINGS } from '@shared/fp'
+import type {
+  FunctionEntry,
+  ProjectDetail,
+  ProjectSummary,
+  StudioSettings,
+  UpdateSettingsInput
+} from '@shared/fp'
 import type { UpdateState } from '@shared/ipc'
 
 import { useFunctionEntryForm } from './useFunctionEntryForm'
@@ -14,6 +21,7 @@ interface UseFpStudioAppResult {
   projectForm: ReturnType<typeof useProjectForm>
   entryForm: ReturnType<typeof useFunctionEntryForm>
   projectProductivityForm: ReturnType<typeof useProjectProductivityForm>
+  studioSettings: StudioSettings
   isLoading: boolean
   isBusy: boolean
   errorMessage: string | null
@@ -32,6 +40,7 @@ interface UseFpStudioAppResult {
     deleteFunctionEntry: (entryId: string) => void
     updateProjectProductivity: () => void
     exportProjectToExcel: (projectId: string) => void
+    updateSettings: (input: UpdateSettingsInput) => void
   }
 }
 
@@ -59,6 +68,7 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     status: 'idle',
     message: 'アップデート状態を確認しています…'
   })
+  const [studioSettings, setStudioSettings] = useState<StudioSettings>(DEFAULT_STUDIO_SETTINGS)
 
   const loadProjectDetail = useCallback(
     async (projectId: string | null) => {
@@ -93,6 +103,11 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     [loadProjectDetail, selectedProjectId]
   )
 
+  const loadSettings = useCallback(async () => {
+    const nextSettings = await window.fpStudio.getSettings()
+    setStudioSettings(nextSettings)
+  }, [])
+
   const initialize = useCallback(async () => {
     setIsLoading(true)
     setErrorMessage(null)
@@ -104,12 +119,13 @@ export function useFpStudioApp(): UseFpStudioAppResult {
       const firstProjectId = nextProjects[0]?.id ?? null
       setSelectedProjectId(firstProjectId)
       await loadProjectDetail(firstProjectId)
+      await loadSettings()
     } catch (error) {
       setErrorMessage(getErrorMessage(error))
     } finally {
       setIsLoading(false)
     }
-  }, [loadProjectDetail])
+  }, [loadProjectDetail, loadSettings])
 
   useEffect(() => {
     void initialize()
@@ -145,6 +161,16 @@ export function useFpStudioApp(): UseFpStudioAppResult {
       setIsBusy(false)
     }
   }, [])
+
+  const updateSettings = useCallback(
+    (input: UpdateSettingsInput) => {
+      void runAction(async () => {
+        const nextSettings = await window.fpStudio.updateSettings(input)
+        setStudioSettings(nextSettings)
+      })
+    },
+    [runAction]
+  )
 
   const createProject = useCallback(() => {
     void runAction(async () => {
@@ -289,6 +315,7 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     projectForm,
     entryForm,
     projectProductivityForm,
+    studioSettings,
     isLoading,
     isBusy,
     errorMessage,
@@ -306,7 +333,8 @@ export function useFpStudioApp(): UseFpStudioAppResult {
       startEditingFunctionEntry,
       cancelEditingFunctionEntry,
       deleteFunctionEntry,
-      updateProjectProductivity
+      updateProjectProductivity,
+      updateSettings
     }
   }
 }

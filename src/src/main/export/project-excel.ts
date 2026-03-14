@@ -1,12 +1,7 @@
 import ExcelJS from 'exceljs'
 
 import type { ProjectDetail } from '@shared/fp'
-import {
-  COMPLEXITY_LEVELS,
-  DIFFICULTY_RULES,
-  FUNCTION_TYPES,
-  WEIGHT_TABLE
-} from '@shared/fp'
+import { COMPLEXITY_LEVELS, DIFFICULTY_RULES, FUNCTION_TYPES, WEIGHT_TABLE } from '@shared/fp'
 
 const SUMMARY_SHEET_NAME = 'Summary'
 const ENTRIES_SHEET_NAME = 'Function Entries'
@@ -20,8 +15,7 @@ function quoteSheet(name: string): string {
 const ENTRIES_FP_RANGE = `${quoteSheet(ENTRIES_SHEET_NAME)}!H2:H1048576`
 const WEIGHTS_START_ROW = 2
 const DIFFICULTY_RULES_START_ROW = 2
-const DIFFICULTY_RULES_END_ROW =
-  DIFFICULTY_RULES_START_ROW + DIFFICULTY_RULES.length - 1
+const DIFFICULTY_RULES_END_ROW = DIFFICULTY_RULES_START_ROW + DIFFICULTY_RULES.length - 1
 
 function getWeightFormula(rowNumber: number): string {
   const weightsEndRow = WEIGHTS_START_ROW + FUNCTION_TYPES.length - 1
