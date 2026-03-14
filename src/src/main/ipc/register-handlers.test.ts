@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { ProjectDetail, ProjectSummary, StudioSettings } from '@shared/fp'
+import { DEFAULT_STUDIO_SETTINGS } from '@shared/fp'
 import { STUDIO_CHANNELS } from '@shared/ipc'
 
 import { registerStudioIpcHandlers } from './register-handlers'
@@ -23,7 +24,7 @@ describe('registerStudioIpcHandlers', () => {
       ...projectSummary,
       entries: []
     }
-    const settings: StudioSettings = { defaultProductivity: 1 }
+    const settings: StudioSettings = DEFAULT_STUDIO_SETTINGS
     const registeredHandlers = new Map<string, (_event: unknown, input?: unknown) => unknown>()
     const ipcMain = {
       handle: vi.fn((channel: string, handler: (_event: unknown, input?: unknown) => unknown) => {
@@ -49,7 +50,11 @@ describe('registerStudioIpcHandlers', () => {
       ),
       getSettings: vi.fn<StudioIpcHandlers['getSettings']>(async () => settings),
       updateSettings: vi.fn<StudioIpcHandlers['updateSettings']>(async (input) => ({
-        defaultProductivity: input.defaultProductivity
+        ...DEFAULT_STUDIO_SETTINGS,
+        defaultProductivity:
+          input.defaultProductivity ?? DEFAULT_STUDIO_SETTINGS.defaultProductivity,
+        difficultyRules: input.difficultyRules ?? DEFAULT_STUDIO_SETTINGS.difficultyRules,
+        weightTable: input.weightTable ?? DEFAULT_STUDIO_SETTINGS.weightTable
       })),
       updateProjectProductivity: vi.fn<StudioIpcHandlers['updateProjectProductivity']>(
         async () => projectDetail
@@ -92,7 +97,10 @@ describe('registerStudioIpcHandlers', () => {
     )
     await expect(
       registeredHandlers.get(STUDIO_CHANNELS.updateSettings)?.({}, { defaultProductivity: 1.25 })
-    ).resolves.toEqual({ defaultProductivity: 1.25 })
+    ).resolves.toEqual({
+      ...DEFAULT_STUDIO_SETTINGS,
+      defaultProductivity: 1.25
+    })
     await expect(
       registeredHandlers.get(STUDIO_CHANNELS.updateProjectProductivity)?.(
         {},

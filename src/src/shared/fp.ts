@@ -3,9 +3,12 @@ export const COMPLEXITY_LEVELS = ['Low', 'Average', 'High'] as const
 
 export type FunctionType = (typeof FUNCTION_TYPES)[number]
 export type ComplexityLevel = (typeof COMPLEXITY_LEVELS)[number]
+export type WeightTable = Record<FunctionType, Record<ComplexityLevel, number>>
 
 export interface StudioSettings {
   defaultProductivity: number
+  difficultyRules: readonly DifficultyRule[]
+  weightTable: WeightTable
 }
 
 export interface ProjectTotals {
@@ -73,7 +76,9 @@ export interface DeleteFunctionEntryInput {
 }
 
 export interface UpdateSettingsInput {
-  defaultProductivity: number
+  defaultProductivity?: number
+  difficultyRules?: readonly DifficultyRule[]
+  weightTable?: WeightTable
 }
 
 export interface UpdateProjectProductivityInput {
@@ -86,7 +91,13 @@ export interface FunctionPointAnalysis {
   functionPoints: number
 }
 
-export const WEIGHT_TABLE: Record<FunctionType, Record<ComplexityLevel, number>> = {
+export interface DifficultyRule {
+  functionType: FunctionType
+  det: readonly [number, number]
+  reference: readonly [number, number]
+}
+
+export const DEFAULT_WEIGHT_TABLE: WeightTable = {
   EI: { Low: 3, Average: 4, High: 6 },
   EO: { Low: 4, Average: 5, High: 7 },
   EQ: { Low: 3, Average: 4, High: 6 },
@@ -94,13 +105,9 @@ export const WEIGHT_TABLE: Record<FunctionType, Record<ComplexityLevel, number>>
   EIF: { Low: 5, Average: 7, High: 10 }
 }
 
-export interface DifficultyRule {
-  functionType: FunctionType
-  det: readonly [number, number]
-  reference: readonly [number, number]
-}
+export const WEIGHT_TABLE = DEFAULT_WEIGHT_TABLE
 
-export const DIFFICULTY_RULES: readonly DifficultyRule[] = [
+export const DEFAULT_DIFFICULTY_RULES: readonly DifficultyRule[] = [
   { functionType: 'EI', det: [5, 16], reference: [1, 2] },
   { functionType: 'EO', det: [6, 20], reference: [1, 3] },
   { functionType: 'EQ', det: [6, 20], reference: [1, 3] },
@@ -108,11 +115,60 @@ export const DIFFICULTY_RULES: readonly DifficultyRule[] = [
   { functionType: 'EIF', det: [20, 51], reference: [1, 5] }
 ] as const
 
-export const DIFFICULTY_RULES_BY_TYPE: Record<FunctionType, DifficultyRule> =
-  DIFFICULTY_RULES.reduce<Record<FunctionType, DifficultyRule>>((acc, rule) => {
-    acc[rule.functionType] = rule
+export const DIFFICULTY_RULES = DEFAULT_DIFFICULTY_RULES
+
+function buildDifficultyRulesByType(
+  rules: readonly DifficultyRule[]
+): Record<FunctionType, DifficultyRule> {
+  return rules.reduce<Record<FunctionType, DifficultyRule>>(
+    (acc, rule) => {
+      acc[rule.functionType] = rule
+      return acc
+    },
+    {} as Record<FunctionType, DifficultyRule>
+  )
+}
+
+const DEFAULT_DIFFICULTY_RULES_BY_TYPE = buildDifficultyRulesByType(DEFAULT_DIFFICULTY_RULES)
+
+function resolveDifficultyRules(
+  rules?: readonly DifficultyRule[]
+): Record<FunctionType, DifficultyRule> {
+  if (!rules) {
+    return DEFAULT_DIFFICULTY_RULES_BY_TYPE
+  }
+
+  const provided = buildDifficultyRulesByType(rules)
+
+  return FUNCTION_TYPES.reduce<Record<FunctionType, DifficultyRule>>(
+    (acc, type) => {
+      acc[type] = provided[type] ?? DEFAULT_DIFFICULTY_RULES_BY_TYPE[type]
+      return acc
+    },
+    {} as Record<FunctionType, DifficultyRule>
+  )
+}
+
+function resolveWeightTable(table?: WeightTable): WeightTable {
+  return FUNCTION_TYPES.reduce<WeightTable>((acc, type) => {
+    const defaultRow = DEFAULT_WEIGHT_TABLE[type]
+    const customRow = table?.[type]
+
+    acc[type] = COMPLEXITY_LEVELS.reduce<Record<ComplexityLevel, number>>(
+      (rowAcc, level) => {
+        const candidate = customRow?.[level]
+        rowAcc[level] =
+          typeof candidate === 'number' && Number.isFinite(candidate)
+            ? candidate
+            : defaultRow[level]
+        return rowAcc
+      },
+      {} as Record<ComplexityLevel, number>
+    )
+
     return acc
-  }, {} as Record<FunctionType, DifficultyRule>)
+  }, {} as WeightTable)
+}
 
 export const DIFFICULTY_MATRIX: Record<FunctionType, readonly (readonly ComplexityLevel[])[]> = {
   EI: [
@@ -142,6 +198,11 @@ export const DIFFICULTY_MATRIX: Record<FunctionType, readonly (readonly Complexi
   ]
 }
 
+export interface AnalyzeFunctionPointOptions {
+  difficultyRules?: readonly DifficultyRule[]
+  weightTable?: WeightTable
+}
+
 function roundToTwoDecimals(value: number): number {
   return Math.round(value * 100) / 100
 }
@@ -154,8 +215,8 @@ export function getReferenceLabel(functionType: FunctionType): 'FTR' | 'RET' {
   return isDataFunction(functionType) ? 'RET' : 'FTR'
 }
 
-function getDetBucket(functionType: FunctionType, det: number): number {
-  const [mediumStart, highStart] = DIFFICULTY_RULES_BY_TYPE[functionType].det
+function getDetBucket(bounds: readonly [number, number], det: number): number {
+  const [mediumStart, highStart] = bounds
 
   if (det < mediumStart) {
     return 0
@@ -168,8 +229,8 @@ function getDetBucket(functionType: FunctionType, det: number): number {
   return 2
 }
 
-function getReferenceBucket(functionType: FunctionType, referenceCount: number): number {
-  const [lowThreshold, highThreshold] = DIFFICULTY_RULES_BY_TYPE[functionType].reference
+function getReferenceBucket(bounds: readonly [number, number], referenceCount: number): number {
+  const [lowThreshold, highThreshold] = bounds
 
   if (referenceCount <= lowThreshold) {
     return 0
@@ -185,15 +246,20 @@ function getReferenceBucket(functionType: FunctionType, referenceCount: number):
 export function analyzeFunctionPoint(
   functionType: FunctionType,
   det: number,
-  referenceCount: number
+  referenceCount: number,
+  options?: AnalyzeFunctionPointOptions
 ): FunctionPointAnalysis {
-  const detBucket = getDetBucket(functionType, det)
-  const referenceBucket = getReferenceBucket(functionType, referenceCount)
+  const difficultyRulesByType = resolveDifficultyRules(options?.difficultyRules)
+  const weightTable = resolveWeightTable(options?.weightTable)
+  const rule = difficultyRulesByType[functionType]
+
+  const detBucket = getDetBucket(rule.det, det)
+  const referenceBucket = getReferenceBucket(rule.reference, referenceCount)
   const difficulty = DIFFICULTY_MATRIX[functionType][referenceBucket][detBucket]
 
   return {
     difficulty,
-    functionPoints: WEIGHT_TABLE[functionType][difficulty]
+    functionPoints: weightTable[functionType][difficulty]
   }
 }
 
@@ -217,4 +283,10 @@ export function buildProjectSummary(
     ...project,
     ...buildProjectTotals(entries, project.productivity)
   }
+}
+
+export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
+  defaultProductivity: 1,
+  difficultyRules: DEFAULT_DIFFICULTY_RULES,
+  weightTable: DEFAULT_WEIGHT_TABLE
 }
