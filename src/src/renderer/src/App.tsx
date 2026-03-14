@@ -8,7 +8,7 @@ import {
   Title2,
   tokens
 } from '@fluentui/react-components'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { EmptyProjectState } from './components/EmptyProjectState'
 import { FunctionEntryForm } from './components/FunctionEntryForm'
@@ -17,27 +17,51 @@ import { ProjectSidebar } from './components/ProjectSidebar'
 import { ProjectSummaryCards } from './components/ProjectSummaryCards'
 import { ProjectProductivityPanel } from './components/ProjectProductivityPanel'
 import UpdateStatusCard from './components/UpdateStatusCard'
+import {
+  AppNavigation,
+  NAV_PANEL_COLLAPSED_WIDTH,
+  NAV_PANEL_OPEN_WIDTH
+} from './components/AppNavigation'
+import { SettingsPanel } from './components/SettingsPanel'
 import { useFpStudioApp } from './hooks/useFpStudioApp'
 
 const useStyles = makeStyles({
   shell: {
+    position: 'relative',
     height: '100%',
     backgroundColor: tokens.colorNeutralBackground2,
     color: tokens.colorNeutralForeground1
   },
   layout: {
+    minHeight: 0,
     height: '100%',
     maxWidth: '1600px',
     margin: '0 auto',
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr)',
+    gap: tokens.spacingHorizontalL,
+    padding: '20px',
+    overflow: 'hidden'
+  },
+  workspace: {
+    minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
     gap: tokens.spacingVerticalL,
-    padding: '20px',
-    overflow: 'hidden',
-    '@media (min-width: 1280px)': {
-      display: 'grid',
-      gridTemplateColumns: '340px minmax(0, 1fr)'
-    }
+    overflow: 'hidden'
+  },
+  projectGrid: {
+    minHeight: 0,
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 340px) minmax(0, 1fr)',
+    gap: tokens.spacingHorizontalL,
+    overflow: 'hidden'
+  },
+  settingsContainer: {
+    minHeight: 0,
+    flex: 1,
+    display: 'flex',
+    overflow: 'hidden'
   },
   main: {
     minHeight: 0,
@@ -81,8 +105,12 @@ const useStyles = makeStyles({
   }
 })
 
+const BASE_LAYOUT_PADDING_LEFT = 20
+
 function App(): React.JSX.Element {
   const styles = useStyles()
+  const [activeView, setActiveView] = useState<'projects' | 'settings'>('projects')
+  const [isNavOpen, setIsNavOpen] = useState(false)
   const {
     projects,
     selectedProject,
@@ -90,6 +118,7 @@ function App(): React.JSX.Element {
     projectForm,
     entryForm,
     projectProductivityForm,
+    studioSettings,
     isLoading,
     isBusy,
     errorMessage,
@@ -114,62 +143,83 @@ function App(): React.JSX.Element {
     )
   }
 
+  const layoutPaddingLeft = `${BASE_LAYOUT_PADDING_LEFT + (isNavOpen ? NAV_PANEL_OPEN_WIDTH : NAV_PANEL_COLLAPSED_WIDTH)}px`
+
   return (
     <div className={styles.shell} data-testid="fp-studio-app">
-      <div className={styles.layout}>
-        <ProjectSidebar
-          isBusy={isBusy}
-          projectDescription={projectForm.values.description}
-          projectName={projectForm.values.name}
-          projects={projects}
-          selectedProjectId={selectedProjectId}
-          onCreateProject={actions.createProject}
-          onDeleteProject={actions.deleteProject}
-          onExportProjectToExcel={actions.exportProjectToExcel}
-          onProjectFieldChange={projectForm.updateField}
-          onSelectProject={actions.selectProject}
-        />
-
-        <main className={styles.main}>
+      <AppNavigation
+        selectedView={activeView}
+        onChange={setActiveView}
+        isOpen={isNavOpen}
+        onToggle={() => setIsNavOpen((prev) => !prev)}
+      />
+      <div className={styles.layout} style={{ paddingLeft: layoutPaddingLeft }}>
+        <div className={styles.workspace}>
           {errorMessage ? (
             <MessageBar data-testid="app-error-message" intent="error">
               <MessageBarBody>{errorMessage}</MessageBarBody>
             </MessageBar>
           ) : null}
 
-          {selectedProject ? (
-            <div className={styles.content}>
-              <ProjectSummaryCards project={selectedProject} />
-              <ProjectProductivityPanel
-                project={selectedProject}
-                productivity={projectProductivityForm.productivity}
-                canSubmit={projectProductivityForm.canSubmit}
+          {activeView === 'projects' ? (
+            <div className={styles.projectGrid}>
+              <ProjectSidebar
                 isBusy={isBusy}
-                onChange={projectProductivityForm.updateValue}
-                onSubmit={actions.updateProjectProductivity}
+                projectDescription={projectForm.values.description}
+                projectName={projectForm.values.name}
+                projects={projects}
+                selectedProjectId={selectedProjectId}
+                onCreateProject={actions.createProject}
+                onDeleteProject={actions.deleteProject}
+                onExportProjectToExcel={actions.exportProjectToExcel}
+                onProjectFieldChange={projectForm.updateField}
+                onSelectProject={actions.selectProject}
               />
-              <FunctionEntryForm
-                canSubmit={entryForm.canSubmit}
-                isBusy={isBusy}
-                isEditing={entryForm.isEditing}
-                onCancel={actions.cancelEditingFunctionEntry}
-                preview={entryForm.preview}
-                projectName={selectedProject.name}
-                values={entryForm.values}
-                onFieldChange={entryForm.updateField}
-                onSubmit={actions.submitFunctionEntry}
-              />
-              <FunctionEntryTable
-                entries={selectedProject.entries}
-                isBusy={isBusy}
-                onEditEntry={actions.startEditingFunctionEntry}
-                onDeleteEntry={actions.deleteFunctionEntry}
-              />
+              <main className={styles.main}>
+                {selectedProject ? (
+                  <div className={styles.content}>
+                    <ProjectSummaryCards project={selectedProject} />
+                    <ProjectProductivityPanel
+                      project={selectedProject}
+                      productivity={projectProductivityForm.productivity}
+                      canSubmit={projectProductivityForm.canSubmit}
+                      isBusy={isBusy}
+                      onChange={projectProductivityForm.updateValue}
+                      onSubmit={actions.updateProjectProductivity}
+                    />
+                    <FunctionEntryForm
+                      canSubmit={entryForm.canSubmit}
+                      isBusy={isBusy}
+                      isEditing={entryForm.isEditing}
+                      onCancel={actions.cancelEditingFunctionEntry}
+                      preview={entryForm.preview}
+                      projectName={selectedProject.name}
+                      values={entryForm.values}
+                      onFieldChange={entryForm.updateField}
+                      onSubmit={actions.submitFunctionEntry}
+                    />
+                    <FunctionEntryTable
+                      entries={selectedProject.entries}
+                      isBusy={isBusy}
+                      onEditEntry={actions.startEditingFunctionEntry}
+                      onDeleteEntry={actions.deleteFunctionEntry}
+                    />
+                  </div>
+                ) : (
+                  <EmptyProjectState />
+                )}
+              </main>
             </div>
           ) : (
-            <EmptyProjectState />
+            <div className={styles.settingsContainer}>
+              <SettingsPanel
+                settings={studioSettings}
+                isBusy={isBusy}
+                onSave={actions.updateSettings}
+              />
+            </div>
           )}
-        </main>
+        </div>
       </div>
       {updateState.status !== 'idle' && (
         <div className={styles.toastContainer}>

@@ -63,20 +63,29 @@ const useStyles = makeStyles({
     overflow: 'auto'
   },
   table: {
-    minWidth: '980px',
-    tableLayout: 'fixed'
+    width: '100%',
+    maxWidth: 'calc(100% - 18px)',
+    tableLayout: 'fixed',
+    textAlign: 'left'
   },
   nameCell: {
-    minWidth: 0
+    minWidth: 0,
+    textAlign: 'left'
+  },
+  headerCell: {
+    textAlign: 'left'
   },
   metricCell: {
-    width: '88px'
+    width: '60px',
+    textAlign: 'left'
   },
   noteColumn: {
-    width: '96px'
+    width: '70px',
+    textAlign: 'center'
   },
   actionColumn: {
-    width: '196px'
+    width: '150px',
+    textAlign: 'center'
   },
   noteFallback: {
     color: tokens.colorNeutralForeground3
@@ -92,7 +101,7 @@ const useStyles = makeStyles({
   actionCell: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     flexWrap: 'nowrap',
     gap: tokens.spacingHorizontalS
   },
@@ -139,14 +148,14 @@ export function FunctionEntryTable({
         <Table aria-label="登録済み機能" className={styles.table}>
           <TableHeader>
             <TableRow>
-              <TableHeaderCell>機能名</TableHeaderCell>
-              <TableHeaderCell className={styles.metricCell}>Type</TableHeaderCell>
-              <TableHeaderCell className={styles.metricCell}>DET</TableHeaderCell>
-              <TableHeaderCell className={styles.metricCell}>FTR / RET</TableHeaderCell>
-              <TableHeaderCell className={styles.metricCell}>難易度</TableHeaderCell>
-              <TableHeaderCell className={styles.metricCell}>FP</TableHeaderCell>
-              <TableHeaderCell className={styles.noteColumn}>備考</TableHeaderCell>
-              <TableHeaderCell className={styles.actionColumn}>操作</TableHeaderCell>
+              <TableHeaderCell className={styles.headerCell}>機能名</TableHeaderCell>
+              <TableHeaderCell className={styles.headerCell}>Type</TableHeaderCell>
+              <TableHeaderCell className={styles.headerCell}>DET</TableHeaderCell>
+              <TableHeaderCell className={styles.headerCell}>FTR / RET</TableHeaderCell>
+              <TableHeaderCell className={styles.headerCell}>難易度</TableHeaderCell>
+              <TableHeaderCell className={styles.headerCell}>FP</TableHeaderCell>
+              <TableHeaderCell className={styles.headerCell}>備考</TableHeaderCell>
+              <TableHeaderCell className={styles.headerCell}>操作</TableHeaderCell>
             </TableRow>
           </TableHeader>
 

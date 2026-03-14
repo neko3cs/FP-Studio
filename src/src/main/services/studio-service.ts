@@ -132,9 +132,13 @@ export function createStudioService(repository: StudioRepository): StudioService
         throw new Error('対象プロジェクトが見つかりません。')
       }
 
+      const settings = repository.getSettings()
       const det = requireInteger(input.det, 'DET', 1)
       const referenceCount = requireInteger(input.referenceCount, 'FTR/RET', 0)
-      const analysis = analyzeFunctionPoint(input.functionType, det, referenceCount)
+      const analysis = analyzeFunctionPoint(input.functionType, det, referenceCount, {
+        difficultyRules: settings.difficultyRules,
+        weightTable: settings.weightTable
+      })
       const now = new Date().toISOString()
       const entry: FunctionEntry = {
         id: crypto.randomUUID(),
@@ -156,7 +160,7 @@ export function createStudioService(repository: StudioRepository): StudioService
       return toProjectDetail(
         { ...project, updatedAt: now },
         repository.listFunctionEntries(project.id),
-        repository.getSettings()
+        settings
       )
     },
     updateFunctionEntry: (input) => {
@@ -174,9 +178,13 @@ export function createStudioService(repository: StudioRepository): StudioService
         throw new Error('更新対象の機能が見つかりません。')
       }
 
+      const settings = repository.getSettings()
       const det = requireInteger(input.det, 'DET', 1)
-        const referenceCount = requireInteger(input.referenceCount, 'FTR/RET', 0)
-      const analysis = analyzeFunctionPoint(input.functionType, det, referenceCount)
+      const referenceCount = requireInteger(input.referenceCount, 'FTR/RET', 0)
+      const analysis = analyzeFunctionPoint(input.functionType, det, referenceCount, {
+        difficultyRules: settings.difficultyRules,
+        weightTable: settings.weightTable
+      })
       const updatedAt = new Date().toISOString()
 
       repository.updateFunctionEntry({
@@ -195,7 +203,7 @@ export function createStudioService(repository: StudioRepository): StudioService
       return toProjectDetail(
         { ...project, updatedAt },
         repository.listFunctionEntries(project.id),
-        repository.getSettings()
+        settings
       )
     },
     deleteFunctionEntry: (input) => {
@@ -217,10 +225,12 @@ export function createStudioService(repository: StudioRepository): StudioService
       const updatedAt = new Date().toISOString()
       repository.updateProjectTimestamp(project.id, updatedAt)
 
+      const settings = repository.getSettings()
+
       return toProjectDetail(
         { ...project, updatedAt },
         repository.listFunctionEntries(input.projectId),
-        repository.getSettings()
+        settings
       )
     },
     updateProjectProductivity: (input) => {
@@ -252,11 +262,22 @@ export function createStudioService(repository: StudioRepository): StudioService
     },
     getSettings: () => repository.getSettings(),
     updateSettings: (input) => {
-      if (!Number.isFinite(input.defaultProductivity) || input.defaultProductivity <= 0) {
-        throw new Error('生産性は0より大きい数値で入力してください。')
+      if (input.defaultProductivity !== undefined) {
+        if (!Number.isFinite(input.defaultProductivity) || input.defaultProductivity <= 0) {
+          throw new Error('生産性は0より大きい数値で入力してください。')
+        }
+
+        repository.setDefaultProductivity(Number(input.defaultProductivity.toFixed(2)))
       }
 
-      repository.setDefaultProductivity(Number(input.defaultProductivity.toFixed(2)))
+      if (input.difficultyRules) {
+        repository.setDifficultyRules(input.difficultyRules)
+      }
+
+      if (input.weightTable) {
+        repository.setWeightTable(input.weightTable)
+      }
+
       return repository.getSettings()
     }
   }
