@@ -33,7 +33,7 @@
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@fluentui/react-components": "^9.73.3",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "^12.8.0",
     "drizzle-orm": "^0.45.1",
     "exceljs": "^4.4.0"
   },
@@ -52,7 +52,7 @@
     "@vitejs/plugin-react": "^5.2.0",
     "@vitest/coverage-v8": "^4.1.0",
     "autoprefixer": "^10.4.27",
-    "electron": "^39.8.0",
+    "electron": "^39.8.2",
     "electron-builder": "^26.8.1",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.4",
