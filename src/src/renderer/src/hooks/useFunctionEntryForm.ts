@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import {
   analyzeFunctionPoint,
@@ -40,49 +40,43 @@ const initialState: FunctionEntryFormState = {
 export function useFunctionEntryForm(): UseFunctionEntryFormResult {
   const [values, setValues] = useState<FunctionEntryFormState>(initialState)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
-
-  const updateField = useCallback((field: keyof FunctionEntryFormState, value: string) => {
-    setValues((current) => ({
-      ...current,
-      [field]: value
-    }))
-  }, [])
-
-  const startEditing = useCallback((entry: FunctionEntry) => {
-    setValues({
-      name: entry.name,
-      functionType: entry.functionType,
-      det: String(entry.det),
-      referenceCount: String(entry.referenceCount),
-      note: entry.note
-    })
-    setEditingEntryId(entry.id)
-  }, [])
-
-  const cancelEditing = useCallback(() => {
-    setValues(initialState)
-    setEditingEntryId(null)
-  }, [])
-
-  const reset = useCallback(() => {
-    setValues(initialState)
-    setEditingEntryId(null)
-  }, [])
+  const [{ updateField, startEditing, cancelEditing, reset }] = useState(() => ({
+    updateField: (field: keyof FunctionEntryFormState, value: string): void => {
+      setValues((current) => ({
+        ...current,
+        [field]: value
+      }))
+    },
+    startEditing: (entry: FunctionEntry): void => {
+      setValues({
+        name: entry.name,
+        functionType: entry.functionType,
+        det: String(entry.det),
+        referenceCount: String(entry.referenceCount),
+        note: entry.note
+      })
+      setEditingEntryId(entry.id)
+    },
+    cancelEditing: (): void => {
+      setValues(initialState)
+      setEditingEntryId(null)
+    },
+    reset: (): void => {
+      setValues(initialState)
+      setEditingEntryId(null)
+    }
+  }))
 
   const parsedDet = Number(values.det)
   const parsedReferenceCount = Number(values.referenceCount)
 
-  const preview = useMemo(() => {
-    if (!Number.isInteger(parsedDet) || parsedDet < 1) {
-      return null
-    }
+  let preview: FunctionPointAnalysis | null = null
 
-    if (!Number.isInteger(parsedReferenceCount) || parsedReferenceCount < 0) {
-      return null
+  if (Number.isInteger(parsedDet) && parsedDet >= 1) {
+    if (Number.isInteger(parsedReferenceCount) && parsedReferenceCount >= 0) {
+      preview = analyzeFunctionPoint(values.functionType, parsedDet, parsedReferenceCount)
     }
-
-    return analyzeFunctionPoint(values.functionType, parsedDet, parsedReferenceCount)
-  }, [parsedDet, parsedReferenceCount, values.functionType])
+  }
 
   return {
     values,

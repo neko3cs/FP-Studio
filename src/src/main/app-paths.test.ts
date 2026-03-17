@@ -27,6 +27,18 @@ describe('app paths', () => {
     expect(existsSync(directory)).toBe(true)
   })
 
+  it('ネストした appDataPath でも再帰的かつ冪等に保存先を作成する', () => {
+    const root = mkdtempSync(join(tmpdir(), 'fp-studio-nested-'))
+    const appDataPath = join(root, 'nested', 'appdata')
+
+    const first = ensureStudioAppDirectory(appDataPath)
+    const second = ensureStudioAppDirectory(appDataPath)
+
+    expect(first).toBe(join(appDataPath, 'FP Studio'))
+    expect(second).toBe(first)
+    expect(existsSync(first)).toBe(true)
+  })
+
   it('DB ファイル名に FP Studio.db を使う', () => {
     const appDataPath = mkdtempSync(join(tmpdir(), 'fp-studio-db-'))
 

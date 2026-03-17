@@ -21,7 +21,8 @@ const shellStyle: CSSProperties = {
 }
 
 const cardStyle: CSSProperties = {
-  width: 'min(560px, 100%)',
+  width: '100%',
+  maxWidth: '560px',
   display: 'flex',
   flexDirection: 'column',
   gap: '20px',
@@ -96,7 +97,7 @@ class CaughtRendererErrorBoundary extends Component<
   }
 
   render(): ReactNode {
-    if (this.state.error) {
+    if (this.state.error !== null) {
       return <RendererErrorFallback error={this.state.error} />
     }
 
@@ -119,7 +120,7 @@ export function RendererErrorBoundary({ children }: RendererErrorBoundaryProps):
     return () => {
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
     }
-  }, [])
+  })
 
   if (globalError) {
     return <RendererErrorFallback error={globalError} />
