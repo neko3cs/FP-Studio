@@ -109,6 +109,63 @@ describe('createStudioService', () => {
     expect(service.getProjectDetail('missing')).toBeNull()
   })
 
+  it('詳細取得で生産性が無効なら設定のデフォルト値を使う', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '説明',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: Number.NaN
+    })
+    repository.listFunctionEntries.mockReturnValue([
+      {
+        id: 'entry-1',
+        projectId: 'project-1',
+        name: '顧客照会',
+        functionType: 'EQ',
+        det: 8,
+        referenceCount: 2,
+        difficulty: 'Average',
+        functionPoints: 4,
+        note: '',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z'
+      }
+    ])
+    repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 2.5 }))
+
+    const service = createStudioService(repository)
+
+    expect(service.getProjectDetail('project-1')).toEqual({
+      id: 'project-1',
+      name: '案件A',
+      description: '説明',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 2.5,
+      functionCount: 1,
+      totalFunctionPoints: 4,
+      estimatedEffortDays: 10,
+      entries: [
+        {
+          id: 'entry-1',
+          projectId: 'project-1',
+          name: '顧客照会',
+          functionType: 'EQ',
+          det: 8,
+          referenceCount: 2,
+          difficulty: 'Average',
+          functionPoints: 4,
+          note: '',
+          createdAt: '2025-12-31T00:00:00.000Z',
+          updatedAt: '2025-12-31T00:00:00.000Z'
+        }
+      ]
+    })
+  })
+
   it('プロジェクトを作成し、入力を trim した詳細を返す', () => {
     const repository = createRepositoryMock()
     repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 1.25 }))
@@ -154,6 +211,69 @@ describe('createStudioService', () => {
     expect(() => service.deleteProject('missing')).toThrow(
       '削除対象のプロジェクトが見つかりません。'
     )
+  })
+
+  it('一覧取得で生産性が未設定ならデフォルト値で集計する', () => {
+    const repository = createRepositoryMock()
+    repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 3 }))
+    repository.listProjects.mockReturnValue([
+      {
+        id: 'project-1',
+        name: '案件A',
+        description: '説明',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z',
+        productivity: Number.NaN
+      }
+    ])
+    repository.listFunctionEntries.mockReturnValue([
+      {
+        id: 'entry-1',
+        projectId: 'project-1',
+        name: '顧客登録',
+        functionType: 'EI',
+        det: 5,
+        referenceCount: 2,
+        difficulty: 'Average',
+        functionPoints: 4,
+        note: '',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z'
+      }
+    ])
+
+    const service = createStudioService(repository)
+
+    expect(service.listProjects()).toEqual([
+      {
+        id: 'project-1',
+        name: '案件A',
+        description: '説明',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z',
+        productivity: 3,
+        functionCount: 1,
+        totalFunctionPoints: 4,
+        estimatedEffortDays: 12
+      }
+    ])
+  })
+
+  it('存在するプロジェクトは削除できる', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+
+    const service = createStudioService(repository)
+
+    expect(service.deleteProject('project-1')).toBeUndefined()
+    expect(repository.deleteProject).toHaveBeenCalledWith('project-1')
   })
 
   it('機能を追加して集計済みの詳細を返す', () => {
@@ -292,6 +412,53 @@ describe('createStudioService', () => {
     ).toThrow('FTR/RETは0以上の整数で入力してください。')
   })
 
+  it('機能追加時に最小値の DET と FTR/RET を許可する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.getSettings.mockReturnValue(createTestSettings())
+    repository.listFunctionEntries.mockReturnValue([
+      {
+        id: '11111111-1111-4111-8111-111111111111',
+        projectId: 'project-1',
+        name: '最小入力',
+        functionType: 'EI',
+        det: 1,
+        referenceCount: 0,
+        difficulty: 'Low',
+        functionPoints: 3,
+        note: '',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z'
+      }
+    ])
+
+    const service = createStudioService(repository)
+
+    expect(
+      service.createFunctionEntry({
+        projectId: 'project-1',
+        name: '最小入力',
+        functionType: 'EI',
+        det: 1,
+        referenceCount: 0,
+        note: ''
+      }).entries[0]
+    ).toMatchObject({
+      name: '最小入力',
+      det: 1,
+      referenceCount: 0,
+      difficulty: 'Low',
+      functionPoints: 3
+    })
+  })
+
   it('機能を更新する', () => {
     const repository = createRepositoryMock()
     repository.getProject.mockReturnValue({
@@ -415,6 +582,130 @@ describe('createStudioService', () => {
     ).toThrow('更新対象の機能が見つかりません。')
   })
 
+  it('更新時に対象プロジェクトがなければ失敗する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue(null)
+
+    const service = createStudioService(repository)
+
+    expect(() =>
+      service.updateFunctionEntry({
+        projectId: 'missing',
+        entryId: 'entry-1',
+        name: '更新後',
+        functionType: 'EO',
+        det: 20,
+        referenceCount: 4,
+        note: ''
+      })
+    ).toThrow('対象プロジェクトが見つかりません。')
+  })
+
+  it('更新対象の entryId が一致しない場合は失敗する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries.mockReturnValue([
+      {
+        id: 'another-entry',
+        projectId: 'project-1',
+        name: '既存機能',
+        functionType: 'EI',
+        det: 4,
+        referenceCount: 1,
+        difficulty: 'Low',
+        functionPoints: 3,
+        note: '',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z'
+      }
+    ])
+
+    const service = createStudioService(repository)
+
+    expect(() =>
+      service.updateFunctionEntry({
+        projectId: 'project-1',
+        entryId: 'entry-1',
+        name: '更新後',
+        functionType: 'EO',
+        det: 20,
+        referenceCount: 4,
+        note: ''
+      })
+    ).toThrow('更新対象の機能が見つかりません。')
+  })
+
+  it('機能更新時に最小値の DET と FTR/RET を許可する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries
+      .mockReturnValueOnce([
+        {
+          id: 'entry-1',
+          projectId: 'project-1',
+          name: '旧機能',
+          functionType: 'EI',
+          det: 4,
+          referenceCount: 1,
+          difficulty: 'Low',
+          functionPoints: 3,
+          note: '',
+          createdAt: '2025-12-31T00:00:00.000Z',
+          updatedAt: '2025-12-31T00:00:00.000Z'
+        }
+      ])
+      .mockReturnValueOnce([
+        {
+          id: 'entry-1',
+          projectId: 'project-1',
+          name: '最小更新',
+          functionType: 'EI',
+          det: 1,
+          referenceCount: 0,
+          difficulty: 'Low',
+          functionPoints: 3,
+          note: '',
+          createdAt: '2025-12-31T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z'
+        }
+      ])
+    repository.getSettings.mockReturnValue(createTestSettings())
+
+    const service = createStudioService(repository)
+
+    expect(
+      service.updateFunctionEntry({
+        projectId: 'project-1',
+        entryId: 'entry-1',
+        name: '最小更新',
+        functionType: 'EI',
+        det: 1,
+        referenceCount: 0,
+        note: ''
+      }).entries[0]
+    ).toMatchObject({
+      name: '最小更新',
+      det: 1,
+      referenceCount: 0,
+      difficulty: 'Low',
+      functionPoints: 3
+    })
+  })
+
   it('機能を削除する', () => {
     const repository = createRepositoryMock()
     repository.getProject.mockReturnValue({
@@ -480,6 +771,50 @@ describe('createStudioService', () => {
     ).toThrow('削除対象の機能が見つかりません。')
   })
 
+  it('削除時に対象プロジェクトがなければ失敗する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue(null)
+
+    const service = createStudioService(repository)
+
+    expect(() => service.deleteFunctionEntry({ projectId: 'missing', entryId: 'entry-1' })).toThrow(
+      '対象プロジェクトが見つかりません。'
+    )
+  })
+
+  it('削除対象の entryId が一致しない場合は失敗する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries.mockReturnValue([
+      {
+        id: 'another-entry',
+        projectId: 'project-1',
+        name: '削除対象外',
+        functionType: 'EI',
+        det: 4,
+        referenceCount: 1,
+        difficulty: 'Low',
+        functionPoints: 3,
+        note: '',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z'
+      }
+    ])
+
+    const service = createStudioService(repository)
+
+    expect(() =>
+      service.deleteFunctionEntry({ projectId: 'project-1', entryId: 'entry-1' })
+    ).toThrow('削除対象の機能が見つかりません。')
+  })
+
   it('プロジェクトの生産性を更新する', () => {
     const repository = createRepositoryMock()
     repository.getProject.mockReturnValue({
@@ -506,6 +841,47 @@ describe('createStudioService', () => {
       2.46,
       '2026-01-01T00:00:00.000Z'
     )
+  })
+
+  it('プロジェクト生産性更新時に対象プロジェクトがなければ失敗する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue(null)
+
+    const service = createStudioService(repository)
+
+    expect(() =>
+      service.updateProjectProductivity({
+        projectId: 'missing',
+        productivity: 1.5
+      })
+    ).toThrow('対象プロジェクトが見つかりません。')
+  })
+
+  it('プロジェクト生産性更新時に不正値を拒否する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+
+    const service = createStudioService(repository)
+
+    expect(() =>
+      service.updateProjectProductivity({
+        projectId: 'project-1',
+        productivity: Number.POSITIVE_INFINITY
+      })
+    ).toThrow('生産性は0より大きい数値で入力してください。')
+    expect(() =>
+      service.updateProjectProductivity({
+        projectId: 'project-1',
+        productivity: 0
+      })
+    ).toThrow('生産性は0より大きい数値で入力してください。')
   })
 
   it('設定値を更新して小数第2位に丸める', () => {
@@ -555,6 +931,43 @@ describe('createStudioService', () => {
     })
 
     expect(repository.setDifficultyRules).toHaveBeenCalledWith(rules)
+    expect(repository.setWeightTable).toHaveBeenCalledWith(weight)
+  })
+
+  it('難易度ルールだけ更新できる', () => {
+    const repository = createRepositoryMock()
+    repository.getSettings.mockReturnValue(createTestSettings())
+    const rules: DifficultyRule[] = DEFAULT_STUDIO_SETTINGS.difficultyRules.map((rule) => ({
+      functionType: rule.functionType,
+      det: [rule.det[0], rule.det[1] + 2],
+      reference: [rule.reference[0], rule.reference[1] + 1]
+    }))
+
+    const service = createStudioService(repository)
+
+    service.updateSettings({ difficultyRules: rules })
+
+    expect(repository.setDifficultyRules).toHaveBeenCalledWith(rules)
+    expect(repository.setWeightTable).not.toHaveBeenCalled()
+  })
+
+  it('重みだけ更新できる', () => {
+    const repository = createRepositoryMock()
+    repository.getSettings.mockReturnValue(createTestSettings())
+    const weight: WeightTable = {
+      ...DEFAULT_STUDIO_SETTINGS.weightTable,
+      EQ: {
+        Low: 30,
+        Average: 40,
+        High: 60
+      }
+    }
+
+    const service = createStudioService(repository)
+
+    service.updateSettings({ weightTable: weight })
+
+    expect(repository.setDifficultyRules).not.toHaveBeenCalled()
     expect(repository.setWeightTable).toHaveBeenCalledWith(weight)
   })
 })
