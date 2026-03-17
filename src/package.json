@@ -1,6 +1,6 @@
 {
   "name": "fp-studio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "FP Studio desktop application",
   "main": "./out/main/index.js",
   "author": "example.com",
