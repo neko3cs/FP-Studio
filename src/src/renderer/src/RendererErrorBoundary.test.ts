@@ -32,7 +32,7 @@ describe('RendererErrorBoundary', () => {
     cleanup()
   })
 
-  it('通常時は子要素を表示し、イベントリスナーを一度だけ登録して解除する', () => {
+  it('通常時は子要素を表示し、イベントリスナーを登録して解除する', () => {
     const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
     const { rerender, unmount } = render(
@@ -69,11 +69,17 @@ describe('RendererErrorBoundary', () => {
     )
 
     expect(screen.getByText('更新後表示')).toBeTruthy()
-    expect(
-      addEventListenerSpy.mock.calls.filter(([eventName]) => eventName === 'unhandledrejection')
-    ).toHaveLength(1)
+    const updatedUnhandledRejectionCalls = addEventListenerSpy.mock.calls.filter(
+      ([eventName]) => eventName === 'unhandledrejection'
+    )
 
-    const registeredHandler = addUnhandledRejectionCalls[0]?.[1]
+    expect(updatedUnhandledRejectionCalls).toHaveLength(2)
+    expect(removeEventListenerSpy).toHaveBeenCalledWith(
+      'unhandledrejection',
+      addUnhandledRejectionCalls[0]?.[1]
+    )
+
+    const registeredHandler = updatedUnhandledRejectionCalls[1]?.[1]
     unmount()
 
     expect(removeEventListenerSpy).toHaveBeenCalledWith('unhandledrejection', registeredHandler)
@@ -104,6 +110,9 @@ describe('RendererErrorBoundary', () => {
     expect(shell.style.padding).toBe('32px')
     expect(shell.style.backgroundColor).toBe('rgb(245, 245, 245)')
     expect(shell.style.color).toBe('rgb(26, 26, 26)')
+    expect(card?.style.width).toBe('100%')
+    expect(card?.style.maxWidth).toBe('560px')
+    expect(card?.style.display).toBe('flex')
     expect(card?.style.flexDirection).toBe('column')
     expect(card?.style.gap).toBe('20px')
     expect(card?.style.padding).toBe('24px')
@@ -114,13 +123,18 @@ describe('RendererErrorBoundary', () => {
     expect(heading.style.fontSize).toBe('1.5rem')
     expect(description.style.marginBottom).toBe('0px')
     expect(message.style.whiteSpace).toBe('pre-wrap')
+    expect(message.style.padding).toBe('12px 14px')
+    expect(message.style.borderRadius).toBe('8px')
     expect(message.style.backgroundColor).toBe('rgb(253, 231, 233)')
     expect(message.style.color).toBe('rgb(164, 38, 44)')
+    expect(button.parentElement?.style.display).toBe('flex')
+    expect(button.parentElement?.style.justifyContent).toBe('flex-end')
     expect(button.style.borderStyle).toBe('none')
     expect(button.style.borderRadius).toBe('6px')
     expect(button.style.padding).toBe('10px 16px')
     expect(button.style.backgroundColor).toBe('rgb(15, 108, 189)')
     expect(button.style.color).toBe('rgb(255, 255, 255)')
+    expect(button.style.font).toBe('inherit')
     expect(button.style.cursor).toBe('pointer')
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Renderer crashed while rendering the app.',
@@ -164,6 +178,14 @@ describe('RendererErrorBoundary', () => {
     dispatchUnhandledRejection({ code: 'E_UNKNOWN' })
 
     expect(screen.getByText('予期しないエラーが発生しました。')).toBeTruthy()
+  })
+
+  it('描画エラーがない間はフォールバックを表示しない', () => {
+    renderWithProvider(
+      React.createElement(RendererErrorBoundary, null, React.createElement('div', null, '正常表示'))
+    )
+
+    expect(screen.queryByTestId('renderer-error-fallback')).toBeNull()
   })
 
   it('normalizeError は Error インスタンスをそのまま返す', () => {

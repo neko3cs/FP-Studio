@@ -57,6 +57,38 @@ describe('useFunctionEntryForm', () => {
     expect(result.current.canSubmit).toBe(false)
   })
 
+  it('最小値の DET=1 と FTR/RET=0 でもプレビューできる', () => {
+    const { result } = renderHook(() => useFunctionEntryForm())
+
+    act(() => {
+      result.current.updateField('name', '最小境界')
+      result.current.updateField('det', '1')
+      result.current.updateField('referenceCount', '0')
+    })
+
+    expect(result.current.preview).toEqual({
+      difficulty: 'Low',
+      functionPoints: 3
+    })
+    expect(result.current.canSubmit).toBe(true)
+  })
+
+  it('空白だけの名前では submit できない', () => {
+    const { result } = renderHook(() => useFunctionEntryForm())
+
+    act(() => {
+      result.current.updateField('name', '   ')
+      result.current.updateField('det', '4')
+      result.current.updateField('referenceCount', '1')
+    })
+
+    expect(result.current.preview).toEqual({
+      difficulty: 'Low',
+      functionPoints: 3
+    })
+    expect(result.current.canSubmit).toBe(false)
+  })
+
   it('既存エントリを編集状態に読み込み、キャンセルで初期化できる', () => {
     const { result } = renderHook(() => useFunctionEntryForm())
 

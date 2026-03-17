@@ -110,6 +110,9 @@ describe('registerStudioIpcHandlers', () => {
         }
       )
     ).resolves.toEqual(projectDetail)
+    await expect(
+      registeredHandlers.get(STUDIO_CHANNELS.exportProjectToExcel)?.({}, { projectId: 'p1' })
+    ).resolves.toBeUndefined()
 
     expect(handlers.listProjects).toHaveBeenCalledTimes(1)
     expect(handlers.getProject).toHaveBeenCalledWith({ projectId: 'p1' })
@@ -124,5 +127,6 @@ describe('registerStudioIpcHandlers', () => {
       projectId: 'p1',
       productivity: 1.5
     })
+    expect(handlers.exportProjectToExcel).toHaveBeenCalledWith({ projectId: 'p1' })
   })
 })
