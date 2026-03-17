@@ -412,6 +412,32 @@ describe('createStudioService', () => {
     ).toThrow('FTR/RETは0以上の整数で入力してください。')
   })
 
+  it('機能追加時に空白の機能名を正しい項目名で拒否する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.getSettings.mockReturnValue(createTestSettings())
+
+    const service = createStudioService(repository)
+
+    expect(() =>
+      service.createFunctionEntry({
+        projectId: 'project-1',
+        name: '   ',
+        functionType: 'EI',
+        det: 4,
+        referenceCount: 1,
+        note: ''
+      })
+    ).toThrow('機能名は必須です。')
+  })
+
   it('機能追加時に最小値の DET と FTR/RET を許可する', () => {
     const repository = createRepositoryMock()
     repository.getProject.mockReturnValue({
@@ -457,6 +483,76 @@ describe('createStudioService', () => {
       difficulty: 'Low',
       functionPoints: 3
     })
+  })
+
+  it('機能追加時に custom settings の難易度ルールと重みを使う', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries.mockReturnValue([
+      {
+        id: '11111111-1111-4111-8111-111111111111',
+        projectId: 'project-1',
+        name: '追加機能',
+        functionType: 'EI',
+        det: 4,
+        referenceCount: 1,
+        difficulty: 'High',
+        functionPoints: 60,
+        note: '',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z'
+      }
+    ])
+    repository.getSettings.mockReturnValue(
+      createTestSettings({
+        difficultyRules: DEFAULT_STUDIO_SETTINGS.difficultyRules.map((rule) =>
+          rule.functionType === 'EI'
+            ? {
+                functionType: 'EI',
+                det: [1, 2],
+                reference: [0, 0]
+              }
+            : rule
+        ),
+        weightTable: {
+          ...DEFAULT_STUDIO_SETTINGS.weightTable,
+          EI: {
+            Low: 30,
+            Average: 40,
+            High: 60
+          }
+        }
+      })
+    )
+
+    const service = createStudioService(repository)
+
+    const detail = service.createFunctionEntry({
+      projectId: 'project-1',
+      name: '追加機能',
+      functionType: 'EI',
+      det: 4,
+      referenceCount: 1,
+      note: ''
+    })
+
+    expect(detail.entries[0]).toMatchObject({
+      difficulty: 'High',
+      functionPoints: 60
+    })
+    expect(repository.createFunctionEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        difficulty: 'High',
+        functionPoints: 60
+      })
+    )
   })
 
   it('機能を更新する', () => {
@@ -555,6 +651,93 @@ describe('createStudioService', () => {
     })
   })
 
+  it('更新時に custom settings の難易度ルールと重みを使う', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries
+      .mockReturnValueOnce([
+        {
+          id: 'entry-1',
+          projectId: 'project-1',
+          name: '旧機能',
+          functionType: 'EI',
+          det: 4,
+          referenceCount: 1,
+          difficulty: 'Low',
+          functionPoints: 3,
+          note: '',
+          createdAt: '2025-12-31T00:00:00.000Z',
+          updatedAt: '2025-12-31T00:00:00.000Z'
+        }
+      ])
+      .mockReturnValueOnce([
+        {
+          id: 'entry-1',
+          projectId: 'project-1',
+          name: '更新後',
+          functionType: 'EI',
+          det: 4,
+          referenceCount: 1,
+          difficulty: 'High',
+          functionPoints: 60,
+          note: '更新',
+          createdAt: '2025-12-31T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z'
+        }
+      ])
+    repository.getSettings.mockReturnValue(
+      createTestSettings({
+        difficultyRules: DEFAULT_STUDIO_SETTINGS.difficultyRules.map((rule) =>
+          rule.functionType === 'EI'
+            ? {
+                functionType: 'EI',
+                det: [1, 2],
+                reference: [0, 0]
+              }
+            : rule
+        ),
+        weightTable: {
+          ...DEFAULT_STUDIO_SETTINGS.weightTable,
+          EI: {
+            Low: 30,
+            Average: 40,
+            High: 60
+          }
+        }
+      })
+    )
+
+    const service = createStudioService(repository)
+
+    const detail = service.updateFunctionEntry({
+      projectId: 'project-1',
+      entryId: 'entry-1',
+      name: '更新後',
+      functionType: 'EI',
+      det: 4,
+      referenceCount: 1,
+      note: '更新'
+    })
+
+    expect(detail.entries[0]).toMatchObject({
+      difficulty: 'High',
+      functionPoints: 60
+    })
+    expect(repository.updateFunctionEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        difficulty: 'High',
+        functionPoints: 60
+      })
+    )
+  })
+
   it('更新対象の機能がなければ失敗する', () => {
     const repository = createRepositoryMock()
     repository.getProject.mockReturnValue({
@@ -599,6 +782,102 @@ describe('createStudioService', () => {
         note: ''
       })
     ).toThrow('対象プロジェクトが見つかりません。')
+  })
+
+  it('更新時に空白の機能名を正しい項目名で拒否する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries.mockReturnValue([
+      {
+        id: 'entry-1',
+        projectId: 'project-1',
+        name: '旧機能',
+        functionType: 'EI',
+        det: 4,
+        referenceCount: 1,
+        difficulty: 'Low',
+        functionPoints: 3,
+        note: '',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z'
+      }
+    ])
+    repository.getSettings.mockReturnValue(createTestSettings())
+
+    const service = createStudioService(repository)
+
+    expect(() =>
+      service.updateFunctionEntry({
+        projectId: 'project-1',
+        entryId: 'entry-1',
+        name: '   ',
+        functionType: 'EI',
+        det: 4,
+        referenceCount: 1,
+        note: ''
+      })
+    ).toThrow('機能名は必須です。')
+  })
+
+  it('更新時に数値の妥当性エラーメッセージで DET と FTR/RET を区別する', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries.mockReturnValue([
+      {
+        id: 'entry-1',
+        projectId: 'project-1',
+        name: '旧機能',
+        functionType: 'EI',
+        det: 4,
+        referenceCount: 1,
+        difficulty: 'Low',
+        functionPoints: 3,
+        note: '',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z'
+      }
+    ])
+    repository.getSettings.mockReturnValue(createTestSettings())
+
+    const service = createStudioService(repository)
+
+    expect(() =>
+      service.updateFunctionEntry({
+        projectId: 'project-1',
+        entryId: 'entry-1',
+        name: '更新後',
+        functionType: 'EI',
+        det: 0,
+        referenceCount: 1,
+        note: ''
+      })
+    ).toThrow('DETは1以上の整数で入力してください。')
+
+    expect(() =>
+      service.updateFunctionEntry({
+        projectId: 'project-1',
+        entryId: 'entry-1',
+        name: '更新後',
+        functionType: 'EI',
+        det: 1,
+        referenceCount: -1,
+        note: ''
+      })
+    ).toThrow('FTR/RETは0以上の整数で入力してください。')
   })
 
   it('更新対象の entryId が一致しない場合は失敗する', () => {

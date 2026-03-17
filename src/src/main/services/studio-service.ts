@@ -46,6 +46,14 @@ function requireInteger(value: number, fieldName: string, minimum: number): numb
   return value
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return Number.isFinite(value)
+}
+
+function resolveProductivity(productivity: number | undefined, fallback: number): number {
+  return isFiniteNumber(productivity) ? productivity : fallback
+}
+
 function toProjectDetail(
   project: {
     id: string
@@ -58,10 +66,10 @@ function toProjectDetail(
   entries: FunctionEntry[],
   settings: StudioSettings
 ): ProjectDetail {
-  const resolvedProductivity =
-    typeof project.productivity === 'number' && Number.isFinite(project.productivity)
-      ? project.productivity
-      : settings.defaultProductivity
+  const resolvedProductivity = resolveProductivity(
+    project.productivity,
+    settings.defaultProductivity
+  )
 
   return {
     ...buildProjectSummary({ ...project, productivity: resolvedProductivity }, entries),
@@ -78,10 +86,7 @@ export function createStudioService(repository: StudioRepository): StudioService
         const entries = repository.listFunctionEntries(project.id)
         const resolvedProject = {
           ...project,
-          productivity:
-            typeof project.productivity === 'number' && Number.isFinite(project.productivity)
-              ? project.productivity
-              : settings.defaultProductivity
+          productivity: resolveProductivity(project.productivity, settings.defaultProductivity)
         }
 
         return buildProjectSummary(resolvedProject, entries)

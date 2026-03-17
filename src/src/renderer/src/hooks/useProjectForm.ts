@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 
 interface ProjectFormState {
   name: string
@@ -19,17 +19,17 @@ const initialState: ProjectFormState = {
 
 export function useProjectForm(): UseProjectFormResult {
   const [values, setValues] = useState<ProjectFormState>(initialState)
-
-  const updateField = useCallback((field: keyof ProjectFormState, value: string) => {
-    setValues((current) => ({
-      ...current,
-      [field]: value
-    }))
-  }, [])
-
-  const reset = useCallback(() => {
-    setValues(initialState)
-  }, [])
+  const [{ updateField, reset }] = useState(() => ({
+    updateField: (field: keyof ProjectFormState, value: string): void => {
+      setValues((current) => ({
+        ...current,
+        [field]: value
+      }))
+    },
+    reset: (): void => {
+      setValues(initialState)
+    }
+  }))
 
   return {
     values,

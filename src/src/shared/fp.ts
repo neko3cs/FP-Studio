@@ -157,10 +157,7 @@ function resolveWeightTable(table?: WeightTable): WeightTable {
     acc[type] = COMPLEXITY_LEVELS.reduce<Record<ComplexityLevel, number>>(
       (rowAcc, level) => {
         const candidate = customRow?.[level]
-        rowAcc[level] =
-          typeof candidate === 'number' && Number.isFinite(candidate)
-            ? candidate
-            : defaultRow[level]
+        rowAcc[level] = isFiniteNumber(candidate) ? candidate : defaultRow[level]
         return rowAcc
       },
       {} as Record<ComplexityLevel, number>
@@ -168,6 +165,10 @@ function resolveWeightTable(table?: WeightTable): WeightTable {
 
     return acc
   }, {} as WeightTable)
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return Number.isFinite(value)
 }
 
 export const DIFFICULTY_MATRIX: Record<FunctionType, readonly (readonly ComplexityLevel[])[]> = {

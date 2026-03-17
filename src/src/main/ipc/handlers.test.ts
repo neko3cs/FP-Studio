@@ -195,6 +195,48 @@ describe('exportProjectToExcel handler', () => {
     await handlers.exportProjectToExcel({ projectId: projectSummary.id })
 
     expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
+    expect(mockedShowSaveDialog).toHaveBeenCalledWith({
+      defaultPath: '出力ファイル.xlsx',
+      filters: [
+        {
+          name: 'Excel Workbook',
+          extensions: ['xlsx']
+        }
+      ],
+      title: 'Excelへエクスポート'
+    })
+    expect(workbook.xlsx.writeFile).not.toHaveBeenCalled()
+  })
+
+  it('filePath が空なら canceled=false でも書き込まない', async () => {
+    const workbook = { xlsx: { writeFile: vi.fn() } } as unknown as Workbook
+    const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
+    const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
+    const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
+    const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
+
+    mockedBuildProjectWorkbook.mockReturnValue(workbook)
+    mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
+    mockedGetFocusedWindow.mockReturnValue(null)
+    mockedShowSaveDialog.mockResolvedValue({ canceled: false, filePath: '' })
+
+    const service: StudioService = {
+      listProjects: vi.fn(),
+      getProjectDetail: vi.fn(() => projectDetail),
+      createProject: vi.fn(),
+      deleteProject: vi.fn(),
+      createFunctionEntry: vi.fn(),
+      updateFunctionEntry: vi.fn(),
+      deleteFunctionEntry: vi.fn(),
+      getSettings: vi.fn(),
+      updateSettings: vi.fn(),
+      updateProjectProductivity: vi.fn()
+    }
+
+    const handlers = createStudioIpcHandlers(service)
+
+    await handlers.exportProjectToExcel({ projectId: projectSummary.id })
+
     expect(workbook.xlsx.writeFile).not.toHaveBeenCalled()
   })
 
@@ -229,6 +271,16 @@ describe('exportProjectToExcel handler', () => {
     await handlers.exportProjectToExcel({ projectId: projectSummary.id })
 
     expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
+    expect(mockedShowSaveDialog).toHaveBeenCalledWith(dummyWindow, {
+      defaultPath: '出力ファイル.xlsx',
+      filters: [
+        {
+          name: 'Excel Workbook',
+          extensions: ['xlsx']
+        }
+      ],
+      title: 'Excelへエクスポート'
+    })
     expect(workbook.xlsx.writeFile).toHaveBeenCalledWith('/tmp/export.xlsx')
   })
 })

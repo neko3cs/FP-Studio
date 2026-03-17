@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useState } from 'react'
 
 function formatProductivity(value: number): string {
   return value.toFixed(2)
@@ -14,19 +14,19 @@ interface UseProjectProductivityFormResult {
 export function useProjectProductivityForm(initialValue: number): UseProjectProductivityFormResult {
   const [productivity, setProductivity] = useState(formatProductivity(initialValue))
   const [baseline, setBaseline] = useState(formatProductivity(initialValue))
+  const [{ updateValue, reset }] = useState(() => ({
+    updateValue: (value: string): void => {
+      setProductivity(value)
+    },
+    reset: (value: number): void => {
+      const formatted = formatProductivity(value)
+      setProductivity(formatted)
+      setBaseline(formatted)
+    }
+  }))
 
-  const parsedProductivity = useMemo(() => Number(productivity), [productivity])
+  const parsedProductivity = Number(productivity)
   const isValidValue = Number.isFinite(parsedProductivity) && parsedProductivity > 0
-
-  const updateValue = useCallback((value: string) => {
-    setProductivity(value)
-  }, [])
-
-  const reset = useCallback((value: number) => {
-    const formatted = formatProductivity(value)
-    setProductivity(formatted)
-    setBaseline(formatted)
-  }, [])
 
   const canSubmit = isValidValue && productivity !== baseline
 
