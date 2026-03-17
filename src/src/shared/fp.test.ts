@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  DEFAULT_DIFFICULTY_RULES,
+  DEFAULT_WEIGHT_TABLE,
+  FUNCTION_TYPES,
   analyzeFunctionPoint,
   buildProjectSummary,
   buildProjectTotals,
@@ -155,5 +158,86 @@ describe('analyzeFunctionPoint の参照数の分岐', () => {
   it('ILF/EIF は DET と参照数の最大値で High を返す', () => {
     expect(analyzeFunctionPoint('ILF', 5, 1)).toEqual({ difficulty: 'Low', functionPoints: 7 })
     expect(analyzeFunctionPoint('EIF', 55, 7)).toEqual({ difficulty: 'High', functionPoints: 10 })
+  })
+})
+
+describe('analyzeFunctionPoint の全マトリクス', () => {
+  it('各 Function Type の 3x3 マトリクスを既定ルールどおりに判定する', () => {
+    const expectedMatrix = [
+      ['Low', 'Low', 'Average'],
+      ['Low', 'Average', 'High'],
+      ['Average', 'High', 'High']
+    ] as const
+
+    for (const functionType of FUNCTION_TYPES) {
+      const rule = DEFAULT_DIFFICULTY_RULES.find(
+        (currentRule) => currentRule.functionType === functionType
+      )
+
+      expect(rule).toBeDefined()
+
+      const [mediumStart, highStart] = rule!.det
+      const [lowThreshold, highThreshold] = rule!.reference
+      const detValues = [mediumStart - 1, mediumStart, highStart]
+      const referenceValues = [lowThreshold, lowThreshold + 1, highThreshold + 1]
+
+      referenceValues.forEach((referenceCount, referenceIndex) => {
+        detValues.forEach((det, detIndex) => {
+          const difficulty = expectedMatrix[referenceIndex][detIndex]
+
+          expect(analyzeFunctionPoint(functionType, det, referenceCount)).toEqual({
+            difficulty,
+            functionPoints: DEFAULT_WEIGHT_TABLE[functionType][difficulty]
+          })
+        })
+      })
+    }
+  })
+})
+
+describe('analyzeFunctionPoint のカスタム設定', () => {
+  it('一部の難易度ルールだけ渡したときは未指定タイプで既定値にフォールバックする', () => {
+    const customRules = DEFAULT_DIFFICULTY_RULES.map((rule) =>
+      rule.functionType === 'EI'
+        ? {
+            functionType: 'EI' as const,
+            det: [10, 20] as const,
+            reference: [2, 4] as const
+          }
+        : rule
+    )
+
+    expect(analyzeFunctionPoint('EI', 10, 3, { difficultyRules: customRules })).toEqual({
+      difficulty: 'Average',
+      functionPoints: 4
+    })
+    expect(analyzeFunctionPoint('EO', 6, 2, { difficultyRules: customRules })).toEqual({
+      difficulty: 'Average',
+      functionPoints: 5
+    })
+  })
+
+  it('重みテーブルの一部を差し替え、無効な値は既定値にフォールバックする', () => {
+    const customWeightTable = {
+      ...DEFAULT_WEIGHT_TABLE,
+      EI: {
+        Low: 30,
+        Average: Number.NaN,
+        High: 60
+      }
+    }
+
+    expect(analyzeFunctionPoint('EI', 4, 1, { weightTable: customWeightTable })).toEqual({
+      difficulty: 'Low',
+      functionPoints: 30
+    })
+    expect(analyzeFunctionPoint('EI', 5, 2, { weightTable: customWeightTable })).toEqual({
+      difficulty: 'Average',
+      functionPoints: 4
+    })
+    expect(analyzeFunctionPoint('EO', 6, 2, { weightTable: customWeightTable })).toEqual({
+      difficulty: 'Average',
+      functionPoints: 5
+    })
   })
 })
