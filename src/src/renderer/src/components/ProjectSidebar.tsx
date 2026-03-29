@@ -50,12 +50,14 @@ const useStyles = makeStyles({
     gap: tokens.spacingVerticalL,
     padding: tokens.spacingHorizontalL
   },
-  formCard: {
+  createButton: {
     flexShrink: 0,
+    width: '100%'
+  },
+  createDialogForm: {
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalM,
-    padding: tokens.spacingHorizontalL
+    gap: tokens.spacingVerticalM
   },
   listHeader: {
     display: 'flex',
@@ -177,6 +179,7 @@ export function ProjectSidebar({
 }: ProjectSidebarProps): React.JSX.Element {
   const styles = useStyles()
   const [projectPendingDeletion, setProjectPendingDeletion] = useState<ProjectSummary | null>(null)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
 
   const closeDeleteDialog = (): void => {
     setProjectPendingDeletion(null)
@@ -191,40 +194,75 @@ export function ProjectSidebar({
     closeDeleteDialog()
   }
 
+  const handleCreateProject = (): void => {
+    onCreateProject()
+    setIsCreateDialogOpen(false)
+  }
+
   return (
     <Card appearance="filled-alternative" className={styles.root}>
-      <Card appearance="outline" className={styles.formCard}>
-        <Field label="プロジェクト名">
-          <Input
-            data-testid="project-name-input"
-            disabled={isBusy}
-            placeholder="例: 販売管理システム刷新"
-            value={projectName}
-            onChange={(_, data) => onProjectFieldChange('name', data.value)}
-          />
-        </Field>
+      <Button
+        appearance="primary"
+        className={styles.createButton}
+        data-testid="open-create-project-dialog-button"
+        disabled={isBusy}
+        onClick={() => setIsCreateDialogOpen(true)}
+      >
+        プロジェクト新規作成
+      </Button>
 
-        <Field label="説明">
-          <Textarea
-            data-testid="project-description-input"
-            disabled={isBusy}
-            placeholder="対象業務や前提条件をひとことメモ"
-            resize="vertical"
-            rows={2}
-            value={projectDescription}
-            onChange={(_, data) => onProjectFieldChange('description', data.value)}
-          />
-        </Field>
+      <Dialog
+        open={isCreateDialogOpen}
+        onOpenChange={(_event, data) => {
+          if (!data.open) {
+            setIsCreateDialogOpen(false)
+          }
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>プロジェクト新規作成</DialogTitle>
+            <DialogContent>
+              <div className={styles.createDialogForm}>
+                <Field label="プロジェクト名">
+                  <Input
+                    data-testid="project-name-input"
+                    disabled={isBusy}
+                    placeholder="例: 販売管理システム刷新"
+                    value={projectName}
+                    onChange={(_, data) => onProjectFieldChange('name', data.value)}
+                  />
+                </Field>
 
-        <Button
-          appearance="primary"
-          data-testid="create-project-button"
-          disabled={isBusy || !projectName.trim()}
-          onClick={onCreateProject}
-        >
-          プロジェクトを作成
-        </Button>
-      </Card>
+                <Field label="説明">
+                  <Textarea
+                    data-testid="project-description-input"
+                    disabled={isBusy}
+                    placeholder="対象業務や前提条件をひとことメモ"
+                    resize="vertical"
+                    rows={2}
+                    value={projectDescription}
+                    onChange={(_, data) => onProjectFieldChange('description', data.value)}
+                  />
+                </Field>
+              </div>
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={() => setIsCreateDialogOpen(false)}>
+                キャンセル
+              </Button>
+              <Button
+                appearance="primary"
+                data-testid="create-project-button"
+                disabled={isBusy || !projectName.trim()}
+                onClick={handleCreateProject}
+              >
+                プロジェクトを作成
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
 
       <div className={styles.listSection}>
         <div className={styles.listHeader}>
@@ -235,7 +273,9 @@ export function ProjectSidebar({
         <div className={styles.list} data-testid="project-list">
           {projects.length === 0 ? (
             <Card appearance="subtle" className={styles.emptyCard}>
-              <Body2>まだプロジェクトがありません。まずは左上から1件作成してください。</Body2>
+              <Body2>
+                まだプロジェクトがありません。「プロジェクト新規作成」ボタンから1件作成してください。
+              </Body2>
             </Card>
           ) : (
             projects.map((project) => {
