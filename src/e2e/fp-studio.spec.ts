@@ -8,6 +8,7 @@ import {
 } from './helpers/electron-app'
 
 async function createProject(page: Page, name: string, description: string): Promise<void> {
+  await page.getByTestId('open-create-project-dialog-button').click()
   await page.getByTestId('project-name-input').fill(name)
   await page.getByTestId('project-description-input').fill(description)
   await page.getByTestId('create-project-button').click()
