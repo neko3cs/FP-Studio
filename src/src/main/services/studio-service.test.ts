@@ -15,6 +15,7 @@ function createRepositoryMock(): Mocked<StudioRepository> {
     getProject: vi.fn<StudioRepository['getProject']>(),
     createProject: vi.fn<StudioRepository['createProject']>(),
     updateProjectTimestamp: vi.fn<StudioRepository['updateProjectTimestamp']>(),
+    renameProject: vi.fn<StudioRepository['renameProject']>(),
     deleteProject: vi.fn<StudioRepository['deleteProject']>(),
     listFunctionEntries: vi.fn<StudioRepository['listFunctionEntries']>(),
     createFunctionEntry: vi.fn<StudioRepository['createFunctionEntry']>(),
@@ -1248,5 +1249,147 @@ describe('createStudioService', () => {
 
     expect(repository.setDifficultyRules).not.toHaveBeenCalled()
     expect(repository.setWeightTable).toHaveBeenCalledWith(weight)
+  })
+
+  it('プロジェクトを複製すると名前に「コピー」が付いた新規プロジェクトが作成される', () => {
+    const repository = createRepositoryMock()
+    repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 1.5 }))
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '説明',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1.5
+    })
+    repository.listFunctionEntries.mockReturnValue([])
+
+    const service = createStudioService(repository)
+    const result = service.duplicateProject({ projectId: 'project-1' })
+
+    expect(result.name).toBe('案件A コピー')
+    expect(result.description).toBe('説明')
+    expect(result.productivity).toBe(1.5)
+    expect(repository.createProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: '11111111-1111-4111-8111-111111111111',
+        name: '案件A コピー',
+        description: '説明',
+        productivity: 1.5
+      })
+    )
+  })
+
+  it('プロジェクトを複製すると機能エントリも全てコピーされる', () => {
+    const repository = createRepositoryMock()
+    repository.getSettings.mockReturnValue(createTestSettings())
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    const sourceEntries = [
+      {
+        id: 'entry-1',
+        projectId: 'project-1',
+        name: '顧客登録',
+        functionType: 'EI' as const,
+        det: 5,
+        referenceCount: 2,
+        difficulty: 'Average' as const,
+        functionPoints: 4,
+        note: '',
+        createdAt: '2025-12-31T00:00:00.000Z',
+        updatedAt: '2025-12-31T00:00:00.000Z'
+      }
+    ]
+    repository.listFunctionEntries
+      .mockReturnValueOnce(sourceEntries)
+      .mockReturnValueOnce([
+        { ...sourceEntries[0], id: '22222222-2222-4222-8222-222222222222', projectId: '11111111-1111-4111-8111-111111111111' }
+      ])
+
+    const service = createStudioService(repository)
+    const result = service.duplicateProject({ projectId: 'project-1' })
+
+    expect(repository.createFunctionEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: '22222222-2222-4222-8222-222222222222',
+        projectId: '11111111-1111-4111-8111-111111111111',
+        name: '顧客登録',
+        functionType: 'EI',
+        det: 5,
+        referenceCount: 2
+      })
+    )
+    expect(result.entries).toHaveLength(1)
+    expect(result.entries[0].name).toBe('顧客登録')
+  })
+
+  it('存在しないプロジェクトは複製できない', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue(null)
+
+    const service = createStudioService(repository)
+
+    expect(() => service.duplicateProject({ projectId: 'missing' })).toThrow(
+      '複製対象のプロジェクトが見つかりません。'
+    )
+  })
+
+  it('プロジェクト名を変更すると更新後の詳細を返す', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '旧名称',
+      description: '説明',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+    repository.listFunctionEntries.mockReturnValue([])
+    repository.getSettings.mockReturnValue(createTestSettings())
+
+    const service = createStudioService(repository)
+    const result = service.renameProject({ projectId: 'project-1', name: '  新名称  ' })
+
+    expect(result.name).toBe('新名称')
+    expect(repository.renameProject).toHaveBeenCalledWith(
+      'project-1',
+      '新名称',
+      '2026-01-01T00:00:00.000Z'
+    )
+  })
+
+  it('空のプロジェクト名では名前変更できない', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue({
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    })
+
+    const service = createStudioService(repository)
+
+    expect(() => service.renameProject({ projectId: 'project-1', name: '   ' })).toThrow(
+      'プロジェクト名は必須です。'
+    )
+  })
+
+  it('存在しないプロジェクトは名前変更できない', () => {
+    const repository = createRepositoryMock()
+    repository.getProject.mockReturnValue(null)
+
+    const service = createStudioService(repository)
+
+    expect(() => service.renameProject({ projectId: 'missing', name: '新名称' })).toThrow(
+      '対象プロジェクトが見つかりません。'
+    )
   })
 })

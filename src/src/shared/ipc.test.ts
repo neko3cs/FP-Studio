@@ -15,7 +15,9 @@ describe('STUDIO_CHANNELS', () => {
       getSettings: 'studio:get-settings',
       updateSettings: 'studio:update-settings',
       updateProjectProductivity: 'studio:update-project-productivity',
-      exportProjectToExcel: 'studio:export-project-to-excel'
+      exportProjectToExcel: 'studio:export-project-to-excel',
+      duplicateProject: 'studio:duplicate-project',
+      renameProject: 'studio:rename-project'
     })
   })
 

@@ -37,6 +37,8 @@ interface ProjectSidebarProps {
   onProjectFieldChange: (field: 'name' | 'description', value: string) => void
   onCreateProject: () => void
   onSelectProject: (projectId: string) => void
+  onDuplicateProject: (projectId: string) => void
+  onRenameProject: (projectId: string, name: string) => void
   onDeleteProject: (projectId: string) => void
   onExportProjectToExcel: (projectId: string) => void
 }
@@ -152,7 +154,8 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground2,
     border: `1px solid ${tokens.colorNeutralStroke1}`,
     padding: 0,
-    boxShadow: tokens.shadow8
+    boxShadow: tokens.shadow8,
+    zIndex: tokens.zIndexFloating
   },
   menuList: {
     minWidth: '160px',
@@ -174,12 +177,16 @@ export function ProjectSidebar({
   onProjectFieldChange,
   onCreateProject,
   onSelectProject,
+  onDuplicateProject,
+  onRenameProject,
   onDeleteProject,
   onExportProjectToExcel
 }: ProjectSidebarProps): React.JSX.Element {
   const styles = useStyles()
   const [projectPendingDeletion, setProjectPendingDeletion] = useState<ProjectSummary | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [projectPendingRename, setProjectPendingRename] = useState<ProjectSummary | null>(null)
+  const [renameValue, setRenameValue] = useState('')
 
   const closeDeleteDialog = (): void => {
     setProjectPendingDeletion(null)
@@ -197,6 +204,25 @@ export function ProjectSidebar({
   const handleCreateProject = (): void => {
     onCreateProject()
     setIsCreateDialogOpen(false)
+  }
+
+  const openRenameDialog = (project: ProjectSummary): void => {
+    setProjectPendingRename(project)
+    setRenameValue(project.name)
+  }
+
+  const closeRenameDialog = (): void => {
+    setProjectPendingRename(null)
+    setRenameValue('')
+  }
+
+  const confirmRenameProject = (): void => {
+    if (!projectPendingRename) {
+      return
+    }
+
+    onRenameProject(projectPendingRename.id, renameValue)
+    closeRenameDialog()
   }
 
   return (
@@ -315,7 +341,7 @@ export function ProjectSidebar({
                         {project.totalFunctionPoints} UFP
                       </Badge>
 
-                      <Menu inline>
+                      <Menu inline positioning={{ strategy: 'fixed' }}>
                         <MenuTrigger>
                           <MenuButton
                             appearance="subtle"
@@ -334,6 +360,20 @@ export function ProjectSidebar({
                               onClick={() => onExportProjectToExcel(project.id)}
                             >
                               Excelへエクスポート
+                            </MenuItem>
+                            <MenuItem
+                              aria-label={`${project.name} を複製`}
+                              disabled={isBusy}
+                              onClick={() => onDuplicateProject(project.id)}
+                            >
+                              このプロジェクトを複製
+                            </MenuItem>
+                            <MenuItem
+                              aria-label={`${project.name} の名前を変更`}
+                              disabled={isBusy}
+                              onClick={() => openRenameDialog(project)}
+                            >
+                              プロジェクト名を変更
                             </MenuItem>
                             <MenuItem
                               aria-label={`${project.name} プロジェクトを削除`}
@@ -358,6 +398,42 @@ export function ProjectSidebar({
           )}
         </div>
       </div>
+
+      <Dialog
+        open={projectPendingRename !== null}
+        onOpenChange={(_event, data) => {
+          if (!data.open) {
+            closeRenameDialog()
+          }
+        }}
+      >
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>プロジェクト名を変更</DialogTitle>
+            <DialogContent>
+              <Field label="新しいプロジェクト名">
+                <Input
+                  value={renameValue}
+                  disabled={isBusy}
+                  onChange={(_, data) => setRenameValue(data.value)}
+                />
+              </Field>
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={closeRenameDialog}>
+                キャンセル
+              </Button>
+              <Button
+                appearance="primary"
+                disabled={isBusy || !renameValue.trim()}
+                onClick={confirmRenameProject}
+              >
+                変更する
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
 
       <Dialog
         open={projectPendingDeletion !== null}

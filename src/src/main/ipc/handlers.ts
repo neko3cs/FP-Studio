@@ -3,9 +3,11 @@ import type {
   CreateProjectInput,
   DeleteFunctionEntryInput,
   DeleteProjectInput,
+  DuplicateProjectInput,
   GetProjectInput,
   ProjectDetail,
   ProjectSummary,
+  RenameProjectInput,
   StudioSettings,
   UpdateFunctionEntryInput,
   UpdateProjectProductivityInput,
@@ -21,6 +23,8 @@ export interface StudioIpcHandlers {
   listProjects: () => Promise<ProjectSummary[]>
   getProject: (input: GetProjectInput) => Promise<ProjectDetail | null>
   createProject: (input: CreateProjectInput) => Promise<ProjectDetail>
+  duplicateProject: (input: DuplicateProjectInput) => Promise<ProjectDetail>
+  renameProject: (input: RenameProjectInput) => Promise<ProjectDetail>
   deleteProject: (input: DeleteProjectInput) => Promise<void>
   createFunctionEntry: (input: CreateFunctionEntryInput) => Promise<ProjectDetail>
   updateFunctionEntry: (input: UpdateFunctionEntryInput) => Promise<ProjectDetail>
@@ -36,6 +40,8 @@ export function createStudioIpcHandlers(service: StudioService): StudioIpcHandle
     listProjects: async () => service.listProjects(),
     getProject: async (input) => service.getProjectDetail(input.projectId),
     createProject: async (input) => service.createProject(input),
+    duplicateProject: async (input) => service.duplicateProject(input),
+    renameProject: async (input) => service.renameProject(input),
     deleteProject: async (input) => service.deleteProject(input.projectId),
     createFunctionEntry: async (input) => service.createFunctionEntry(input),
     updateFunctionEntry: async (input) => service.updateFunctionEntry(input),
