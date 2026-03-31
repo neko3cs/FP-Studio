@@ -31,6 +31,8 @@ const studioApi: StudioApi = {
   updateProjectProductivity: (input) =>
     ipcRenderer.invoke(STUDIO_CHANNELS.updateProjectProductivity, input),
   exportProjectToExcel: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.exportProjectToExcel, input),
+  duplicateProject: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.duplicateProject, input),
+  renameProject: (input) => ipcRenderer.invoke(STUDIO_CHANNELS.renameProject, input),
   getUpdateState: () => ipcRenderer.invoke(UPDATE_CHANNELS.getUpdateState),
   checkForUpdates: () => ipcRenderer.invoke(UPDATE_CHANNELS.checkForUpdates),
   installUpdate: () => ipcRenderer.invoke(UPDATE_CHANNELS.installUpdate),
