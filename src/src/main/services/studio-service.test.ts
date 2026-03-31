@@ -15,6 +15,7 @@ function createRepositoryMock(): Mocked<StudioRepository> {
     getProject: vi.fn<StudioRepository['getProject']>(),
     createProject: vi.fn<StudioRepository['createProject']>(),
     updateProjectTimestamp: vi.fn<StudioRepository['updateProjectTimestamp']>(),
+    renameProject: vi.fn<StudioRepository['renameProject']>(),
     deleteProject: vi.fn<StudioRepository['deleteProject']>(),
     listFunctionEntries: vi.fn<StudioRepository['listFunctionEntries']>(),
     createFunctionEntry: vi.fn<StudioRepository['createFunctionEntry']>(),

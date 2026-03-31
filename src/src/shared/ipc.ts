@@ -3,9 +3,11 @@ import type {
   CreateProjectInput,
   DeleteFunctionEntryInput,
   DeleteProjectInput,
+  DuplicateProjectInput,
   GetProjectInput,
   ProjectDetail,
   ProjectSummary,
+  RenameProjectInput,
   StudioSettings,
   UpdateFunctionEntryInput,
   UpdateProjectProductivityInput,
@@ -23,7 +25,9 @@ export const STUDIO_CHANNELS = {
   getSettings: 'studio:get-settings',
   updateSettings: 'studio:update-settings',
   updateProjectProductivity: 'studio:update-project-productivity',
-  exportProjectToExcel: 'studio:export-project-to-excel'
+  exportProjectToExcel: 'studio:export-project-to-excel',
+  duplicateProject: 'studio:duplicate-project',
+  renameProject: 'studio:rename-project'
 } as const
 
 export const UPDATE_CHANNELS = {
@@ -64,6 +68,8 @@ export interface StudioApi {
   updateSettings: (input: UpdateSettingsInput) => Promise<StudioSettings>
   updateProjectProductivity: (input: UpdateProjectProductivityInput) => Promise<ProjectDetail>
   exportProjectToExcel: (input: { projectId: string }) => Promise<void>
+  duplicateProject: (input: DuplicateProjectInput) => Promise<ProjectDetail>
+  renameProject: (input: RenameProjectInput) => Promise<ProjectDetail>
   getUpdateState: () => Promise<UpdateState>
   checkForUpdates: () => Promise<void>
   installUpdate: () => Promise<void>

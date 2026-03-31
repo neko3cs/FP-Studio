@@ -86,6 +86,15 @@ export interface UpdateProjectProductivityInput {
   productivity: number
 }
 
+export interface DuplicateProjectInput {
+  projectId: string
+}
+
+export interface RenameProjectInput {
+  projectId: string
+  name: string
+}
+
 export interface FunctionPointAnalysis {
   difficulty: ComplexityLevel
   functionPoints: number
