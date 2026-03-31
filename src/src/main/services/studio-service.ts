@@ -4,9 +4,11 @@ import {
   type CreateFunctionEntryInput,
   type CreateProjectInput,
   type DeleteFunctionEntryInput,
+  type DuplicateProjectInput,
   type FunctionEntry,
   type ProjectDetail,
   type ProjectSummary,
+  type RenameProjectInput,
   type StudioSettings,
   type UpdateFunctionEntryInput,
   type UpdateProjectProductivityInput,
@@ -19,6 +21,8 @@ export interface StudioService {
   listProjects: () => ProjectSummary[]
   getProjectDetail: (projectId: string) => ProjectDetail | null
   createProject: (input: CreateProjectInput) => ProjectDetail
+  duplicateProject: (input: DuplicateProjectInput) => ProjectDetail
+  renameProject: (input: RenameProjectInput) => ProjectDetail
   deleteProject: (projectId: string) => void
   createFunctionEntry: (input: CreateFunctionEntryInput) => ProjectDetail
   updateFunctionEntry: (input: UpdateFunctionEntryInput) => ProjectDetail
@@ -120,6 +124,61 @@ export function createStudioService(repository: StudioRepository): StudioService
       repository.createProject(project)
 
       return toProjectDetail(project, [], projectSettings)
+    },
+    duplicateProject: (input) => {
+      const source = repository.getProject(input.projectId)
+
+      if (!source) {
+        throw new Error('複製対象のプロジェクトが見つかりません。')
+      }
+
+      const settings = repository.getSettings()
+      const sourceEntries = repository.listFunctionEntries(source.id)
+      const now = new Date().toISOString()
+      const newProject = {
+        id: crypto.randomUUID(),
+        name: `${source.name} コピー`,
+        description: source.description,
+        createdAt: now,
+        updatedAt: now,
+        productivity: source.productivity ?? settings.defaultProductivity
+      }
+
+      repository.createProject(newProject)
+
+      for (const entry of sourceEntries) {
+        repository.createFunctionEntry({
+          ...entry,
+          id: crypto.randomUUID(),
+          projectId: newProject.id,
+          createdAt: now,
+          updatedAt: now
+        })
+      }
+
+      return toProjectDetail(
+        newProject,
+        repository.listFunctionEntries(newProject.id),
+        settings
+      )
+    },
+    renameProject: (input) => {
+      const project = repository.getProject(input.projectId)
+
+      if (!project) {
+        throw new Error('対象プロジェクトが見つかりません。')
+      }
+
+      const name = requireNonEmptyText(input.name, 'プロジェクト名')
+      const updatedAt = new Date().toISOString()
+
+      repository.renameProject(input.projectId, name, updatedAt)
+
+      return toProjectDetail(
+        { ...project, name, updatedAt },
+        repository.listFunctionEntries(input.projectId),
+        repository.getSettings()
+      )
     },
     deleteProject: (projectId) => {
       const project = repository.getProject(projectId)

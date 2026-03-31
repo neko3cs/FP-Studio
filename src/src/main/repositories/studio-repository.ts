@@ -25,6 +25,7 @@ export interface StudioRepository {
   getProject: (projectId: string) => ProjectRecord | null
   createProject: (project: ProjectRecord) => void
   updateProjectTimestamp: (projectId: string, updatedAt: string) => void
+  renameProject: (projectId: string, name: string, updatedAt: string) => void
   setProjectProductivity: (projectId: string, productivity: number, updatedAt: string) => void
   deleteProject: (projectId: string) => void
   listFunctionEntries: (projectId: string) => FunctionEntryRecord[]
@@ -132,6 +133,9 @@ export function createStudioRepository(databaseContext: DatabaseContext): Studio
     },
     updateProjectTimestamp: (projectId, updatedAt) => {
       db.update(projectsTable).set({ updatedAt }).where(eq(projectsTable.id, projectId)).run()
+    },
+    renameProject: (projectId, name, updatedAt) => {
+      db.update(projectsTable).set({ name, updatedAt }).where(eq(projectsTable.id, projectId)).run()
     },
     deleteProject: (projectId) => {
       db.delete(projectsTable).where(eq(projectsTable.id, projectId)).run()

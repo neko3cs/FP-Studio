@@ -65,6 +65,8 @@ describe('createStudioIpcHandlers', () => {
         difficultyRules: input.difficultyRules ?? DEFAULT_STUDIO_SETTINGS.difficultyRules,
         weightTable: input.weightTable ?? DEFAULT_STUDIO_SETTINGS.weightTable
       })),
+      duplicateProject: vi.fn<StudioService['duplicateProject']>(() => projectDetail),
+      renameProject: vi.fn<StudioService['renameProject']>(() => projectDetail),
       updateProjectProductivity: vi.fn<StudioService['updateProjectProductivity']>(
         () => projectDetail
       )
@@ -155,6 +157,8 @@ describe('exportProjectToExcel handler', () => {
       deleteFunctionEntry: vi.fn(),
       getSettings: vi.fn(),
       updateSettings: vi.fn(),
+      duplicateProject: vi.fn(),
+      renameProject: vi.fn(),
       updateProjectProductivity: vi.fn()
     }
 
@@ -181,6 +185,8 @@ describe('exportProjectToExcel handler', () => {
       listProjects: vi.fn(),
       getProjectDetail: vi.fn(() => projectDetail),
       createProject: vi.fn(),
+      duplicateProject: vi.fn(),
+      renameProject: vi.fn(),
       deleteProject: vi.fn(),
       createFunctionEntry: vi.fn(),
       updateFunctionEntry: vi.fn(),
@@ -224,6 +230,8 @@ describe('exportProjectToExcel handler', () => {
       listProjects: vi.fn(),
       getProjectDetail: vi.fn(() => projectDetail),
       createProject: vi.fn(),
+      duplicateProject: vi.fn(),
+      renameProject: vi.fn(),
       deleteProject: vi.fn(),
       createFunctionEntry: vi.fn(),
       updateFunctionEntry: vi.fn(),
@@ -257,6 +265,8 @@ describe('exportProjectToExcel handler', () => {
       listProjects: vi.fn(),
       getProjectDetail: vi.fn(() => projectDetail),
       createProject: vi.fn(),
+      duplicateProject: vi.fn(),
+      renameProject: vi.fn(),
       deleteProject: vi.fn(),
       createFunctionEntry: vi.fn(),
       updateFunctionEntry: vi.fn(),
