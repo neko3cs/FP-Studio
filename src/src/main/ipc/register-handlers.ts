@@ -19,6 +19,8 @@ export function registerStudioIpcHandlers(
   ipcMain.removeHandler(STUDIO_CHANNELS.updateSettings)
   ipcMain.removeHandler(STUDIO_CHANNELS.updateProjectProductivity)
   ipcMain.removeHandler(STUDIO_CHANNELS.exportProjectToExcel)
+  ipcMain.removeHandler(STUDIO_CHANNELS.duplicateProject)
+  ipcMain.removeHandler(STUDIO_CHANNELS.renameProject)
 
   ipcMain.handle(STUDIO_CHANNELS.listProjects, () => handlers.listProjects())
   ipcMain.handle(STUDIO_CHANNELS.getProject, (_event, input) => handlers.getProject(input))
@@ -41,4 +43,8 @@ export function registerStudioIpcHandlers(
   ipcMain.handle(STUDIO_CHANNELS.exportProjectToExcel, (_event, input) =>
     handlers.exportProjectToExcel(input)
   )
+  ipcMain.handle(STUDIO_CHANNELS.duplicateProject, (_event, input) =>
+    handlers.duplicateProject(input)
+  )
+  ipcMain.handle(STUDIO_CHANNELS.renameProject, (_event, input) => handlers.renameProject(input))
 }

@@ -32,6 +32,8 @@ interface UseFpStudioAppResult {
   }
   actions: {
     createProject: () => void
+    duplicateProject: (projectId: string) => void
+    renameProject: (projectId: string, name: string) => void
     selectProject: (projectId: string) => void
     deleteProject: (projectId: string) => void
     submitFunctionEntry: () => void
@@ -183,6 +185,27 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     })
   }, [entryForm, projectForm, refreshProjects, runAction])
 
+  const duplicateProject = useCallback(
+    (projectId: string) => {
+      void runAction(async () => {
+        const detail = await window.fpStudio.duplicateProject({ projectId })
+        await refreshProjects(detail.id)
+      })
+    },
+    [refreshProjects, runAction]
+  )
+
+  const renameProject = useCallback(
+    (projectId: string, name: string) => {
+      void runAction(async () => {
+        const detail = await window.fpStudio.renameProject({ projectId, name })
+        setSelectedProject((prev) => (prev?.id === projectId ? detail : prev))
+        await refreshProjects(selectedProjectId)
+      })
+    },
+    [refreshProjects, runAction, selectedProjectId]
+  )
+
   const selectProject = useCallback(
     (projectId: string) => {
       void runAction(async () => {
@@ -326,6 +349,8 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     },
     actions: {
       createProject,
+      duplicateProject,
+      renameProject,
       selectProject,
       deleteProject,
       exportProjectToExcel,
