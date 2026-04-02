@@ -214,11 +214,7 @@ function App(): React.JSX.Element {
             </div>
           ) : (
             <div className={styles.settingsContainer}>
-              <SettingsPanel
-                settings={studioSettings}
-                isBusy={isBusy}
-                onSave={actions.updateSettings}
-              />
+              <SettingsPanel settings={studioSettings} />
             </div>
           )}
         </div>
