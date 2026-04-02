@@ -89,8 +89,9 @@ export function SettingsPanel({ settings }: SettingsPanelProps): React.JSX.Eleme
               {settings.difficultyRules.map((rule) => (
                 <TableRow key={rule.functionType}>
                   <TableCell className={styles.tableCell}>
-                    <Body1Strong>{rule.functionType}</Body1Strong>
-                    <Caption1>{getReferenceLabel(rule.functionType)}</Caption1>
+                    <Body1Strong>
+                      {rule.functionType}（{getReferenceLabel(rule.functionType)}）
+                    </Body1Strong>
                   </TableCell>
                   <TableCell className={styles.tableCell}>{rule.det[0]}</TableCell>
                   <TableCell className={styles.tableCell}>{rule.det[1]}</TableCell>
