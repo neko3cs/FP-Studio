@@ -61,9 +61,7 @@ describe('createStudioIpcHandlers', () => {
       updateSettings: vi.fn((input) => ({
         ...DEFAULT_STUDIO_SETTINGS,
         defaultProductivity:
-          input.defaultProductivity ?? DEFAULT_STUDIO_SETTINGS.defaultProductivity,
-        difficultyRules: input.difficultyRules ?? DEFAULT_STUDIO_SETTINGS.difficultyRules,
-        weightTable: input.weightTable ?? DEFAULT_STUDIO_SETTINGS.weightTable
+          input.defaultProductivity ?? DEFAULT_STUDIO_SETTINGS.defaultProductivity
       })),
       duplicateProject: vi.fn<StudioService['duplicateProject']>(() => projectDetail),
       renameProject: vi.fn<StudioService['renameProject']>(() => projectDetail),

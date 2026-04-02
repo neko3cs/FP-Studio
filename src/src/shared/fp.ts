@@ -77,8 +77,6 @@ export interface DeleteFunctionEntryInput {
 
 export interface UpdateSettingsInput {
   defaultProductivity?: number
-  difficultyRules?: readonly DifficultyRule[]
-  weightTable?: WeightTable
 }
 
 export interface UpdateProjectProductivityInput {

@@ -2,12 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vi
 
 import { createStudioService } from './studio-service'
 import type { StudioRepository } from '../repositories/studio-repository'
-import {
-  DEFAULT_STUDIO_SETTINGS,
-  type StudioSettings,
-  type DifficultyRule,
-  type WeightTable
-} from '@shared/fp'
+import { DEFAULT_STUDIO_SETTINGS, type StudioSettings } from '@shared/fp'
 
 function createRepositoryMock(): Mocked<StudioRepository> {
   const repository: Mocked<StudioRepository> = {
@@ -23,8 +18,6 @@ function createRepositoryMock(): Mocked<StudioRepository> {
     deleteFunctionEntry: vi.fn<StudioRepository['deleteFunctionEntry']>(),
     getSettings: vi.fn<StudioRepository['getSettings']>(),
     setDefaultProductivity: vi.fn<StudioRepository['setDefaultProductivity']>(),
-    setDifficultyRules: vi.fn<StudioRepository['setDifficultyRules']>(),
-    setWeightTable: vi.fn<StudioRepository['setWeightTable']>(),
     setProjectProductivity: vi.fn<StudioRepository['setProjectProductivity']>(),
     close: vi.fn<StudioRepository['close']>()
   }
@@ -1187,70 +1180,6 @@ describe('createStudioService', () => {
     )
   })
 
-  it('難易度ルールと重みを同時に変更できる', () => {
-    const repository = createRepositoryMock()
-    repository.getSettings.mockReturnValue(createTestSettings())
-    const rules: DifficultyRule[] = DEFAULT_STUDIO_SETTINGS.difficultyRules.map((rule) => ({
-      functionType: rule.functionType,
-      det: [rule.det[0] + 1, rule.det[1] + 1],
-      reference: [rule.reference[0] + 1, rule.reference[1] + 1]
-    }))
-    const weight: WeightTable = {
-      ...DEFAULT_STUDIO_SETTINGS.weightTable,
-      EI: {
-        ...DEFAULT_STUDIO_SETTINGS.weightTable.EI,
-        Low: DEFAULT_STUDIO_SETTINGS.weightTable.EI.Low + 1
-      }
-    }
-
-    const service = createStudioService(repository)
-
-    service.updateSettings({
-      difficultyRules: rules,
-      weightTable: weight
-    })
-
-    expect(repository.setDifficultyRules).toHaveBeenCalledWith(rules)
-    expect(repository.setWeightTable).toHaveBeenCalledWith(weight)
-  })
-
-  it('難易度ルールだけ更新できる', () => {
-    const repository = createRepositoryMock()
-    repository.getSettings.mockReturnValue(createTestSettings())
-    const rules: DifficultyRule[] = DEFAULT_STUDIO_SETTINGS.difficultyRules.map((rule) => ({
-      functionType: rule.functionType,
-      det: [rule.det[0], rule.det[1] + 2],
-      reference: [rule.reference[0], rule.reference[1] + 1]
-    }))
-
-    const service = createStudioService(repository)
-
-    service.updateSettings({ difficultyRules: rules })
-
-    expect(repository.setDifficultyRules).toHaveBeenCalledWith(rules)
-    expect(repository.setWeightTable).not.toHaveBeenCalled()
-  })
-
-  it('重みだけ更新できる', () => {
-    const repository = createRepositoryMock()
-    repository.getSettings.mockReturnValue(createTestSettings())
-    const weight: WeightTable = {
-      ...DEFAULT_STUDIO_SETTINGS.weightTable,
-      EQ: {
-        Low: 30,
-        Average: 40,
-        High: 60
-      }
-    }
-
-    const service = createStudioService(repository)
-
-    service.updateSettings({ weightTable: weight })
-
-    expect(repository.setDifficultyRules).not.toHaveBeenCalled()
-    expect(repository.setWeightTable).toHaveBeenCalledWith(weight)
-  })
-
   it('プロジェクトを複製すると名前に「コピー」が付いた新規プロジェクトが作成される', () => {
     const repository = createRepositoryMock()
     repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 1.5 }))
@@ -1306,11 +1235,13 @@ describe('createStudioService', () => {
         updatedAt: '2025-12-31T00:00:00.000Z'
       }
     ]
-    repository.listFunctionEntries
-      .mockReturnValueOnce(sourceEntries)
-      .mockReturnValueOnce([
-        { ...sourceEntries[0], id: '22222222-2222-4222-8222-222222222222', projectId: '11111111-1111-4111-8111-111111111111' }
-      ])
+    repository.listFunctionEntries.mockReturnValueOnce(sourceEntries).mockReturnValueOnce([
+      {
+        ...sourceEntries[0],
+        id: '22222222-2222-4222-8222-222222222222',
+        projectId: '11111111-1111-4111-8111-111111111111'
+      }
+    ])
 
     const service = createStudioService(repository)
     const result = service.duplicateProject({ projectId: 'project-1' })

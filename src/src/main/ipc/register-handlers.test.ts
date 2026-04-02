@@ -52,9 +52,7 @@ describe('registerStudioIpcHandlers', () => {
       updateSettings: vi.fn<StudioIpcHandlers['updateSettings']>(async (input) => ({
         ...DEFAULT_STUDIO_SETTINGS,
         defaultProductivity:
-          input.defaultProductivity ?? DEFAULT_STUDIO_SETTINGS.defaultProductivity,
-        difficultyRules: input.difficultyRules ?? DEFAULT_STUDIO_SETTINGS.difficultyRules,
-        weightTable: input.weightTable ?? DEFAULT_STUDIO_SETTINGS.weightTable
+          input.defaultProductivity ?? DEFAULT_STUDIO_SETTINGS.defaultProductivity
       })),
       updateProjectProductivity: vi.fn<StudioIpcHandlers['updateProjectProductivity']>(
         async () => projectDetail
