@@ -156,11 +156,7 @@ export function createStudioService(repository: StudioRepository): StudioService
         })
       }
 
-      return toProjectDetail(
-        newProject,
-        repository.listFunctionEntries(newProject.id),
-        settings
-      )
+      return toProjectDetail(newProject, repository.listFunctionEntries(newProject.id), settings)
     },
     renameProject: (input) => {
       const project = repository.getProject(input.projectId)
@@ -332,14 +328,6 @@ export function createStudioService(repository: StudioRepository): StudioService
         }
 
         repository.setDefaultProductivity(Number(input.defaultProductivity.toFixed(2)))
-      }
-
-      if (input.difficultyRules) {
-        repository.setDifficultyRules(input.difficultyRules)
-      }
-
-      if (input.weightTable) {
-        repository.setWeightTable(input.weightTable)
       }
 
       return repository.getSettings()
