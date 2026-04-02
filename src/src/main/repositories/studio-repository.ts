@@ -1,11 +1,11 @@
 import { desc, eq } from 'drizzle-orm'
 
 import type {
+  DifficultyRule,
   FunctionEntry,
   FunctionType,
-  StudioSettings,
-  DifficultyRule,
   ProjectDetail,
+  StudioSettings,
   WeightTable
 } from '@shared/fp'
 
@@ -34,8 +34,6 @@ export interface StudioRepository {
   deleteFunctionEntry: (entryId: string) => void
   getSettings: () => StudioSettings
   setDefaultProductivity: (value: number) => void
-  setDifficultyRules: (rules: readonly DifficultyRule[]) => void
-  setWeightTable: (table: WeightTable) => void
   close: () => void
 }
 
@@ -179,12 +177,6 @@ export function createStudioRepository(databaseContext: DatabaseContext): Studio
     setDefaultProductivity: (value) => {
       const normalized = String(value)
       upsertSetting(db, 'defaultProductivity', normalized)
-    },
-    setDifficultyRules: (rules) => {
-      upsertSetting(db, 'difficultyRules', JSON.stringify(rules))
-    },
-    setWeightTable: (table) => {
-      upsertSetting(db, 'weightTable', JSON.stringify(table))
     },
     close: () => native.close()
   }
