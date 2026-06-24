@@ -39,7 +39,7 @@ function renderForm(overrides: Partial<FormProps> = {}): void {
 }
 
 describe('FunctionEntryForm', () => {
-  it('shows a shorter heading while creating a function entry', () => {
+  it('機能追加モードでは見出しに「機能を追加」と表示する', () => {
     renderForm()
 
     const heading = screen.getByRole('heading', {
@@ -48,7 +48,7 @@ describe('FunctionEntryForm', () => {
     expect(heading.textContent).toBe('機能を追加')
   })
 
-  it('shows an edit heading when editing a function entry', () => {
+  it('機能編集モードでは見出しに「機能を編集」と表示する', () => {
     renderForm({ isEditing: true })
 
     const heading = screen.getByRole('heading', {
@@ -57,7 +57,7 @@ describe('FunctionEntryForm', () => {
     expect(heading.textContent).toBe('機能を編集')
   })
 
-  it('opens and closes the help dialog when a question button is clicked', () => {
+  it('Function Type のヘルプボタンをクリックするとダイアログが開閉する', () => {
     renderForm()
 
     const [helpButton] = screen.getAllByTestId('function-help-button-functionType')
@@ -77,7 +77,7 @@ describe('FunctionEntryForm', () => {
     expect(screen.queryByTestId('function-help-dialog-title')).toBeNull()
   })
 
-  it('shows FTR/RET help information', () => {
+  it('FTR/RET のヘルプボタンをクリックするとダイアログが開閉する', () => {
     renderForm()
 
     const [referenceHelpButton] = screen.getAllByTestId('function-help-button-reference')

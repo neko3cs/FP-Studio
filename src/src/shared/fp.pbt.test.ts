@@ -7,8 +7,7 @@ import {
   COMPLEXITY_LEVELS,
   DEFAULT_WEIGHT_TABLE,
   FUNCTION_TYPES,
-  type FunctionEntry,
-  type FunctionType,
+  type FunctionEntry
 } from './fp'
 
 const functionTypeArb = fc.constantFrom(...FUNCTION_TYPES)
@@ -25,7 +24,7 @@ const entryArb: fc.Arbitrary<FunctionEntry> = fc
     detArb,
     referenceCountArb,
     fc.constantFrom(...COMPLEXITY_LEVELS),
-    fc.integer({ min: 1, max: 15 }),
+    fc.integer({ min: 1, max: 15 })
   )
   .map(([id, projectId, name, functionType, det, referenceCount, difficulty, functionPoints]) => ({
     id,
@@ -38,39 +37,54 @@ const entryArb: fc.Arbitrary<FunctionEntry> = fc
     functionPoints,
     note: '',
     createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z'
   }))
 
 describe('analyzeFunctionPoint', () => {
   it('任意の有効入力に対して難易度は常に Low/Average/High のいずれかを返す', () => {
     fc.assert(
-      fc.property(functionTypeArb, detArb, referenceCountArb, (functionType, det, referenceCount) => {
-        const result = analyzeFunctionPoint(functionType, det, referenceCount)
-        expect(COMPLEXITY_LEVELS).toContain(result.difficulty)
-      }),
+      fc.property(
+        functionTypeArb,
+        detArb,
+        referenceCountArb,
+        (functionType, det, referenceCount) => {
+          const result = analyzeFunctionPoint(functionType, det, referenceCount)
+          expect(COMPLEXITY_LEVELS).toContain(result.difficulty)
+        }
+      )
     )
   })
 
   it('FPは常に正の整数で、機能種別と難易度の重みと一致する', () => {
     fc.assert(
-      fc.property(functionTypeArb, detArb, referenceCountArb, (functionType, det, referenceCount) => {
-        const result = analyzeFunctionPoint(functionType, det, referenceCount)
-        const expectedFP = DEFAULT_WEIGHT_TABLE[functionType][result.difficulty]
-        expect(result.functionPoints).toBe(expectedFP)
-        expect(Number.isInteger(result.functionPoints)).toBe(true)
-        expect(result.functionPoints).toBeGreaterThan(0)
-      }),
+      fc.property(
+        functionTypeArb,
+        detArb,
+        referenceCountArb,
+        (functionType, det, referenceCount) => {
+          const result = analyzeFunctionPoint(functionType, det, referenceCount)
+          const expectedFP = DEFAULT_WEIGHT_TABLE[functionType][result.difficulty]
+          expect(result.functionPoints).toBe(expectedFP)
+          expect(Number.isInteger(result.functionPoints)).toBe(true)
+          expect(result.functionPoints).toBeGreaterThan(0)
+        }
+      )
     )
   })
 
   it('同じ入力に対して常に同じ結果を返す（参照透過性）', () => {
     fc.assert(
-      fc.property(functionTypeArb, detArb, referenceCountArb, (functionType, det, referenceCount) => {
-        const r1 = analyzeFunctionPoint(functionType, det, referenceCount)
-        const r2 = analyzeFunctionPoint(functionType, det, referenceCount)
-        expect(r1.difficulty).toBe(r2.difficulty)
-        expect(r1.functionPoints).toBe(r2.functionPoints)
-      }),
+      fc.property(
+        functionTypeArb,
+        detArb,
+        referenceCountArb,
+        (functionType, det, referenceCount) => {
+          const r1 = analyzeFunctionPoint(functionType, det, referenceCount)
+          const r2 = analyzeFunctionPoint(functionType, det, referenceCount)
+          expect(r1.difficulty).toBe(r2.difficulty)
+          expect(r1.functionPoints).toBe(r2.functionPoints)
+        }
+      )
     )
   })
 
@@ -83,7 +97,7 @@ describe('analyzeFunctionPoint', () => {
         expect(ilfResult.functionPoints).toBeGreaterThanOrEqual(7)
         expect(eiResult.functionPoints).toBeLessThanOrEqual(6)
         expect(eqResult.functionPoints).toBeLessThanOrEqual(6)
-      }),
+      })
     )
   })
 })
@@ -91,20 +105,28 @@ describe('analyzeFunctionPoint', () => {
 describe('buildProjectTotals', () => {
   it('functionCountは常にentries.lengthに等しい', () => {
     fc.assert(
-      fc.property(fc.array(entryArb, { maxLength: 50 }), productivityArb, (entries, productivity) => {
-        const totals = buildProjectTotals(entries, productivity)
-        expect(totals.functionCount).toBe(entries.length)
-      }),
+      fc.property(
+        fc.array(entryArb, { maxLength: 50 }),
+        productivityArb,
+        (entries, productivity) => {
+          const totals = buildProjectTotals(entries, productivity)
+          expect(totals.functionCount).toBe(entries.length)
+        }
+      )
     )
   })
 
   it('totalFunctionPointsは各エントリのfunctionPoints合計に等しい', () => {
     fc.assert(
-      fc.property(fc.array(entryArb, { maxLength: 50 }), productivityArb, (entries, productivity) => {
-        const totals = buildProjectTotals(entries, productivity)
-        const expected = entries.reduce((sum, e) => sum + e.functionPoints, 0)
-        expect(totals.totalFunctionPoints).toBe(expected)
-      }),
+      fc.property(
+        fc.array(entryArb, { maxLength: 50 }),
+        productivityArb,
+        (entries, productivity) => {
+          const totals = buildProjectTotals(entries, productivity)
+          const expected = entries.reduce((sum, e) => sum + e.functionPoints, 0)
+          expect(totals.totalFunctionPoints).toBe(expected)
+        }
+      )
     )
   })
 
@@ -115,7 +137,7 @@ describe('buildProjectTotals', () => {
         expect(totals.functionCount).toBe(0)
         expect(totals.totalFunctionPoints).toBe(0)
         expect(totals.estimatedEffortDays).toBe(0)
-      }),
+      })
     )
   })
 
@@ -129,8 +151,8 @@ describe('buildProjectTotals', () => {
           const rawEffort = totals.totalFunctionPoints * productivity
           const expected = Math.round(rawEffort * 100) / 100
           expect(totals.estimatedEffortDays).toBe(expected)
-        },
-      ),
+        }
+      )
     )
   })
 
@@ -143,9 +165,11 @@ describe('buildProjectTotals', () => {
           const totals1 = buildProjectTotals(entries, productivity)
           const totals2 = buildProjectTotals(entries, productivity * 2)
           // 丸め誤差を考慮して1日以内の誤差を許容
-          expect(Math.abs(totals2.estimatedEffortDays - totals1.estimatedEffortDays * 2)).toBeLessThanOrEqual(1)
-        },
-      ),
+          expect(
+            Math.abs(totals2.estimatedEffortDays - totals1.estimatedEffortDays * 2)
+          ).toBeLessThanOrEqual(1)
+        }
+      )
     )
   })
 })
