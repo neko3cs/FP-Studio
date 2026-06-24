@@ -44,7 +44,7 @@ const projectDetail: ProjectDetail = {
 const settings: StudioSettings = DEFAULT_STUDIO_SETTINGS
 
 describe('createStudioIpcHandlers', () => {
-  it('サービスへ処理を委譲する', async () => {
+  it('全サービスメソッドの呼び出しを IPC ハンドラーから委譲する', async () => {
     const service: StudioService = {
       listProjects: vi.fn<StudioService['listProjects']>(() => [projectSummary]),
       getProjectDetail: vi.fn<StudioService['getProjectDetail']>(() => null),
@@ -137,158 +137,148 @@ describe('createStudioIpcHandlers', () => {
       productivity: 1.5
     })
   })
-})
 
-describe('exportProjectToExcel handler', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('throws when the project is missing', async () => {
-    const service: StudioService = {
-      listProjects: vi.fn(() => [projectSummary]),
-      getProjectDetail: vi.fn(() => null),
-      createProject: vi.fn(),
-      deleteProject: vi.fn(),
-      createFunctionEntry: vi.fn(),
-      updateFunctionEntry: vi.fn(),
-      deleteFunctionEntry: vi.fn(),
-      getSettings: vi.fn(),
-      updateSettings: vi.fn(),
-      duplicateProject: vi.fn(),
-      renameProject: vi.fn(),
-      updateProjectProductivity: vi.fn()
-    }
-
-    const handlers = createStudioIpcHandlers(service)
-
-    await expect(handlers.exportProjectToExcel({ projectId: projectSummary.id })).rejects.toThrow(
-      '対象のプロジェクトが見つかりません。'
-    )
-  })
-
-  it('does nothing when the save dialog is canceled', async () => {
-    const workbook = { xlsx: { writeFile: vi.fn() } } as unknown as Workbook
-    const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
-    const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
-    const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
-    const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
-
-    mockedBuildProjectWorkbook.mockReturnValue(workbook)
-    mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
-    mockedGetFocusedWindow.mockReturnValue(null)
-    mockedShowSaveDialog.mockResolvedValue({ canceled: true, filePath: '' })
-
-    const service: StudioService = {
-      listProjects: vi.fn(),
-      getProjectDetail: vi.fn(() => projectDetail),
-      createProject: vi.fn(),
-      duplicateProject: vi.fn(),
-      renameProject: vi.fn(),
-      deleteProject: vi.fn(),
-      createFunctionEntry: vi.fn(),
-      updateFunctionEntry: vi.fn(),
-      deleteFunctionEntry: vi.fn(),
-      getSettings: vi.fn(),
-      updateSettings: vi.fn(),
-      updateProjectProductivity: vi.fn()
-    }
-
-    const handlers = createStudioIpcHandlers(service)
-
-    await handlers.exportProjectToExcel({ projectId: projectSummary.id })
-
-    expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
-    expect(mockedShowSaveDialog).toHaveBeenCalledWith({
-      defaultPath: '出力ファイル.xlsx',
-      filters: [
-        {
-          name: 'Excel Workbook',
-          extensions: ['xlsx']
-        }
-      ],
-      title: 'Excelへエクスポート'
+  describe('Excel エクスポート', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
     })
-    expect(workbook.xlsx.writeFile).not.toHaveBeenCalled()
-  })
 
-  it('filePath が空なら canceled=false でも書き込まない', async () => {
-    const workbook = { xlsx: { writeFile: vi.fn() } } as unknown as Workbook
-    const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
-    const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
-    const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
-    const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
+    it('対象プロジェクトが存在しないときはエラーになる', async () => {
+      const service: StudioService = {
+        listProjects: vi.fn(() => [projectSummary]),
+        getProjectDetail: vi.fn(() => null),
+        createProject: vi.fn(),
+        deleteProject: vi.fn(),
+        createFunctionEntry: vi.fn(),
+        updateFunctionEntry: vi.fn(),
+        deleteFunctionEntry: vi.fn(),
+        getSettings: vi.fn(),
+        updateSettings: vi.fn(),
+        duplicateProject: vi.fn(),
+        renameProject: vi.fn(),
+        updateProjectProductivity: vi.fn()
+      }
 
-    mockedBuildProjectWorkbook.mockReturnValue(workbook)
-    mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
-    mockedGetFocusedWindow.mockReturnValue(null)
-    mockedShowSaveDialog.mockResolvedValue({ canceled: false, filePath: '' })
+      const handlers = createStudioIpcHandlers(service)
 
-    const service: StudioService = {
-      listProjects: vi.fn(),
-      getProjectDetail: vi.fn(() => projectDetail),
-      createProject: vi.fn(),
-      duplicateProject: vi.fn(),
-      renameProject: vi.fn(),
-      deleteProject: vi.fn(),
-      createFunctionEntry: vi.fn(),
-      updateFunctionEntry: vi.fn(),
-      deleteFunctionEntry: vi.fn(),
-      getSettings: vi.fn(),
-      updateSettings: vi.fn(),
-      updateProjectProductivity: vi.fn()
-    }
-
-    const handlers = createStudioIpcHandlers(service)
-
-    await handlers.exportProjectToExcel({ projectId: projectSummary.id })
-
-    expect(workbook.xlsx.writeFile).not.toHaveBeenCalled()
-  })
-
-  it('writes the workbook when the dialog confirms', async () => {
-    const workbook = { xlsx: { writeFile: vi.fn() } } as unknown as Workbook
-    const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
-    const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
-    const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
-    const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
-    const dummyWindow = { id: 'window' } as unknown as BrowserWindow
-
-    mockedBuildProjectWorkbook.mockReturnValue(workbook)
-    mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
-    mockedGetFocusedWindow.mockReturnValue(dummyWindow)
-    mockedShowSaveDialog.mockResolvedValue({ canceled: false, filePath: '/tmp/export.xlsx' })
-
-    const service: StudioService = {
-      listProjects: vi.fn(),
-      getProjectDetail: vi.fn(() => projectDetail),
-      createProject: vi.fn(),
-      duplicateProject: vi.fn(),
-      renameProject: vi.fn(),
-      deleteProject: vi.fn(),
-      createFunctionEntry: vi.fn(),
-      updateFunctionEntry: vi.fn(),
-      deleteFunctionEntry: vi.fn(),
-      getSettings: vi.fn(),
-      updateSettings: vi.fn(),
-      updateProjectProductivity: vi.fn()
-    }
-
-    const handlers = createStudioIpcHandlers(service)
-
-    await handlers.exportProjectToExcel({ projectId: projectSummary.id })
-
-    expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
-    expect(mockedShowSaveDialog).toHaveBeenCalledWith(dummyWindow, {
-      defaultPath: '出力ファイル.xlsx',
-      filters: [
-        {
-          name: 'Excel Workbook',
-          extensions: ['xlsx']
-        }
-      ],
-      title: 'Excelへエクスポート'
+      await expect(handlers.exportProjectToExcel({ projectId: projectSummary.id })).rejects.toThrow(
+        '対象のプロジェクトが見つかりません。'
+      )
     })
-    expect(workbook.xlsx.writeFile).toHaveBeenCalledWith('/tmp/export.xlsx')
+
+    it('保存ダイアログをキャンセルするとファイルを書き込まない', async () => {
+      const workbook = { xlsx: { writeFile: vi.fn() } } as unknown as Workbook
+      const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
+      const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
+      const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
+      const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
+
+      mockedBuildProjectWorkbook.mockReturnValue(workbook)
+      mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
+      mockedGetFocusedWindow.mockReturnValue(null)
+      mockedShowSaveDialog.mockResolvedValue({ canceled: true, filePath: '' })
+
+      const service: StudioService = {
+        listProjects: vi.fn(),
+        getProjectDetail: vi.fn(() => projectDetail),
+        createProject: vi.fn(),
+        duplicateProject: vi.fn(),
+        renameProject: vi.fn(),
+        deleteProject: vi.fn(),
+        createFunctionEntry: vi.fn(),
+        updateFunctionEntry: vi.fn(),
+        deleteFunctionEntry: vi.fn(),
+        getSettings: vi.fn(),
+        updateSettings: vi.fn(),
+        updateProjectProductivity: vi.fn()
+      }
+
+      const handlers = createStudioIpcHandlers(service)
+
+      await handlers.exportProjectToExcel({ projectId: projectSummary.id })
+
+      expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
+      expect(mockedShowSaveDialog).toHaveBeenCalledWith({
+        defaultPath: '出力ファイル.xlsx',
+        filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }],
+        title: 'Excelへエクスポート'
+      })
+      expect(workbook.xlsx.writeFile).not.toHaveBeenCalled()
+    })
+
+    it('filePath が空なら canceled=false でも書き込まない', async () => {
+      const workbook = { xlsx: { writeFile: vi.fn() } } as unknown as Workbook
+      const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
+      const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
+      const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
+      const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
+
+      mockedBuildProjectWorkbook.mockReturnValue(workbook)
+      mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
+      mockedGetFocusedWindow.mockReturnValue(null)
+      mockedShowSaveDialog.mockResolvedValue({ canceled: false, filePath: '' })
+
+      const service: StudioService = {
+        listProjects: vi.fn(),
+        getProjectDetail: vi.fn(() => projectDetail),
+        createProject: vi.fn(),
+        duplicateProject: vi.fn(),
+        renameProject: vi.fn(),
+        deleteProject: vi.fn(),
+        createFunctionEntry: vi.fn(),
+        updateFunctionEntry: vi.fn(),
+        deleteFunctionEntry: vi.fn(),
+        getSettings: vi.fn(),
+        updateSettings: vi.fn(),
+        updateProjectProductivity: vi.fn()
+      }
+
+      const handlers = createStudioIpcHandlers(service)
+
+      await handlers.exportProjectToExcel({ projectId: projectSummary.id })
+
+      expect(workbook.xlsx.writeFile).not.toHaveBeenCalled()
+    })
+
+    it('保存ダイアログを確定すると指定パスにワークブックを書き込む', async () => {
+      const workbook = { xlsx: { writeFile: vi.fn() } } as unknown as Workbook
+      const mockedBuildProjectWorkbook = vi.mocked(buildProjectWorkbook)
+      const mockedBuildDefaultExportFileName = vi.mocked(buildDefaultExportFileName)
+      const mockedGetFocusedWindow = vi.mocked(BrowserWindow.getFocusedWindow)
+      const mockedShowSaveDialog = vi.mocked(dialog.showSaveDialog)
+      const dummyWindow = { id: 'window' } as unknown as BrowserWindow
+
+      mockedBuildProjectWorkbook.mockReturnValue(workbook)
+      mockedBuildDefaultExportFileName.mockReturnValue('出力ファイル.xlsx')
+      mockedGetFocusedWindow.mockReturnValue(dummyWindow)
+      mockedShowSaveDialog.mockResolvedValue({ canceled: false, filePath: '/tmp/export.xlsx' })
+
+      const service: StudioService = {
+        listProjects: vi.fn(),
+        getProjectDetail: vi.fn(() => projectDetail),
+        createProject: vi.fn(),
+        duplicateProject: vi.fn(),
+        renameProject: vi.fn(),
+        deleteProject: vi.fn(),
+        createFunctionEntry: vi.fn(),
+        updateFunctionEntry: vi.fn(),
+        deleteFunctionEntry: vi.fn(),
+        getSettings: vi.fn(),
+        updateSettings: vi.fn(),
+        updateProjectProductivity: vi.fn()
+      }
+
+      const handlers = createStudioIpcHandlers(service)
+
+      await handlers.exportProjectToExcel({ projectId: projectSummary.id })
+
+      expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
+      expect(mockedShowSaveDialog).toHaveBeenCalledWith(dummyWindow, {
+        defaultPath: '出力ファイル.xlsx',
+        filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }],
+        title: 'Excelへエクスポート'
+      })
+      expect(workbook.xlsx.writeFile).toHaveBeenCalledWith('/tmp/export.xlsx')
+    })
   })
 })
