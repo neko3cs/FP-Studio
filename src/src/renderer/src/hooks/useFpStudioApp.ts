@@ -111,9 +111,6 @@ export function useFpStudioApp(): UseFpStudioAppResult {
   }, [])
 
   const initialize = useCallback(async () => {
-    setIsLoading(true)
-    setErrorMessage(null)
-
     try {
       const nextProjects = await window.fpStudio.listProjects()
       setProjects(nextProjects)
