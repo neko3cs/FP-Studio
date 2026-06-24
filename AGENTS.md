@@ -88,6 +88,7 @@ Use the `/test-ts-project` skill to run format → unit → coverage → mutatio
 - **Commit/push requires explicit user permission.** Follow the `git-rule` skill.
 - Function entries are ordered by `createdAt DESC`; projects are ordered by `updatedAt DESC`. Preserve this ordering.
 - `productivity` is stored per-project as a `real` value rounded to 2 decimal places. Global `defaultProductivity` in settings is the fallback when a project has no override.
+- **Test naming convention:** All test names (`describe`/`it`) must be written in Japanese natural language so that the test suite reads as a specification document. Use nested `describe` blocks to group tests by feature and operation (e.g., `プロジェクト管理 > 一覧取得 > 生産性が未設定のときはデフォルト値を使う`). Follow the TDD cycle enforced by the `test-as-tdd` skill.
 
 ## Why Certain Decisions Were Made
 
@@ -105,17 +106,18 @@ Use the `/test-ts-project` skill to run format → unit → coverage → mutatio
 
 ## Open Issues
 
-- **VAF (补正係数) support not implemented.** Requirements note this as a future consideration. No current blocker — it is a scope decision.
+- **VAF (補正係数) support not implemented.** Requirements note this as a future consideration. No current blocker — it is a scope decision.
 - **Custom weight table (enterprise master management screen) not implemented.** The `settings` table already stores `weightTable` as JSON, so infrastructure exists. The UI for editing it was removed in Issue #1 and is currently read-only.
 
 ## Current State (2026-06-24)
 
 - Version: **v0.2.0** (latest release)
-- Unit test coverage: ~97% (achieved in pre-v0.1.2 work); mutation score: 100%
+- Branch coverage: **95%**; mutation score: **98.29%**
 - E2E (Playwright): covers core project and function entry flows
 - **Recent changes:**
-  - Issue #1 resolved: Difficulty rule and weight table editing removed; settings panel is now read-only
-  - Issue #2 resolved: Project duplication and rename added
-  - Project creation moved to a dialog (PR #4)
+  - All npm packages updated to latest (including major versions: TypeScript 6, Vite 8, Tailwind 4, electron-vite 6 beta)
+  - All tests rewritten in TDD specification style: Japanese natural-language names, nested `describe` hierarchy, English names translated to Japanese
+  - Property-based tests (fast-check) added for `fp.ts` core logic
+- **Known surviving mutants (6):** `duplicateProject`/`renameProject` return values not asserted in `handlers.test.ts`; one `??` vs `&&` edge case and one `undefined` guard in `studio-service.ts`. Not blocking — coverage and mutation score both above 90%.
 - **No known open bugs.** Branch `main` is clean.
 - Next likely work: new feature requests via GitHub Issues.
