@@ -21,7 +21,7 @@ const project: ProjectDetail = {
 }
 
 describe('ProjectSummaryCards', () => {
-  it('shows the project name in the summary area', () => {
+  it('プロジェクト名・UFP・概算工数・機能件数をサマリーエリアに表示する', () => {
     render(
       <FluentProvider theme={webLightTheme}>
         <ProjectSummaryCards project={project} />
