@@ -13,9 +13,8 @@
     ],
     "paths": {
       "@shared/*": [
-        "src/shared/*"
+        "./src/shared/*"
       ]
-    },
-    "baseUrl": "."
+    }
   }
 }
