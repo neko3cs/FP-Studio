@@ -26,6 +26,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:mutation": "stryker run",
+    "test:pbt": "vitest run src/shared/fp.pbt.test.ts",
     "test:watch": "vitest",
     "test:e2e": "pnpm run native:electron && pnpm build && playwright test",
     "test:e2e:headed": "pnpm run native:electron && pnpm build && playwright test --headed"
@@ -62,6 +63,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
+    "fast-check": "^4.8.0",
     "jsdom": "^29.1.1",
     "playwright": "^1.61.1",
     "postcss": "^8.5.15",
