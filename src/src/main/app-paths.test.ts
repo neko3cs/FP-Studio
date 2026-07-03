@@ -14,7 +14,7 @@ import {
 
 describe('app paths', () => {
   it('アプリ保存先のパスを組み立てる', () => {
-    expect(getStudioAppDirectory('/tmp/appdata')).toBe('/tmp/appdata/FP Studio')
+    expect(getStudioAppDirectory('/tmp/appdata')).toBe(join('/tmp/appdata', 'FP Studio'))
     expect(STUDIO_APP_DIRECTORY_NAME).toBe('FP Studio')
     expect(STUDIO_DATABASE_FILE_NAME).toBe('FP Studio.db')
   })
