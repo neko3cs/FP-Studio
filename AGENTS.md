@@ -103,21 +103,30 @@ Use the `/test-ts-project` skill to run format → unit → coverage → mutatio
 - `analyzeFunctionPoint()` in `shared/fp.ts` is the single source of truth for difficulty/FP calculation. The Excel export intentionally replicates this logic as Excel formulas (using `LET`/`INDEX`/`MATCH`) so exported files remain self-contained — keep both in sync if the calculation changes.
 - The `settings` table stores `difficultyRules` and `weightTable` as JSON strings. Changing the schema of these types requires a migration and careful backward-compatibility handling in `parseJsonSetting()`.
 - `electron-updater` auto-update is wired up in `main/update-manager.ts`. Update state is pushed to the renderer via IPC events (`UPDATE_EVENTS.stateChanged`). Do not block the main process during update checks.
+- `pnpm install`/`pnpm update` can fail with `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (stale `node_modules` vs. `.npmrc`'s `shamefully-hoist=true`) or hang waiting on a TTY prompt to remove `node_modules`. Run `CI=true pnpm install` to resolve non-interactively.
+- After bumping the `electron` devDependency, the first `pnpm test:e2e` run can time out on the first spec while Playwright downloads the new Electron binary mid-run. Re-run the suite once the binary is cached — this is not a real regression.
 
 ## Open Issues
 
 - **VAF (補正係数) support not implemented.** Requirements note this as a future consideration. No current blocker — it is a scope decision.
 - **Custom weight table (enterprise master management screen) not implemented.** The `settings` table already stores `weightTable` as JSON, so infrastructure exists. The UI for editing it was removed in Issue #1 and is currently read-only.
 
-## Current State (2026-06-24)
+## Incidents
 
-- Version: **v0.2.0** (latest release)
-- Branch coverage: **95%**; mutation score: **98.29%**
+| Date | What went wrong | Prevention |
+| :--- | :--- | :--- |
+| 2026-07-03 | `app-paths.test.ts` hardcoded the expected path as a POSIX literal (`/tmp/appdata/FP Studio`), which fails on Windows because `path.join` returns backslash-separated paths there | Build expected path values with `join()` (as the other tests in the same file already did) instead of hardcoding a separator style |
+
+## Current State (2026-07-03)
+
+- Version: **v0.2.1** on `main`; branch `chore/update-packages-20260703` only bumps dependency versions (no app version change).
+- Branch coverage: **95%**; mutation score: **98.29%** (unchanged after this round of dependency updates)
 - E2E (Playwright): covers core project and function entry flows
 - **Recent changes:**
+  - PR [#7](https://github.com/neko3cs/FP-Studio/pull/7) (open): npm dependencies bumped to latest within existing semver ranges via `pnpm update` (majors like Electron 43 / ESLint 10 deliberately left out of range); fixed the Windows-only `app-paths.test.ts` failure (see Incidents)
   - All npm packages updated to latest (including major versions: TypeScript 6, Vite 8, Tailwind 4, electron-vite 6 beta)
   - All tests rewritten in TDD specification style: Japanese natural-language names, nested `describe` hierarchy, English names translated to Japanese
   - Property-based tests (fast-check) added for `fp.ts` core logic
 - **Known surviving mutants (6):** `duplicateProject`/`renameProject` return values not asserted in `handlers.test.ts`; one `??` vs `&&` edge case and one `undefined` guard in `studio-service.ts`. Not blocking — coverage and mutation score both above 90%.
-- **No known open bugs.** Branch `main` is clean.
+- **No known open bugs.** Branch `main` is clean; PR #7 pending review/merge.
 - Next likely work: new feature requests via GitHub Issues.
