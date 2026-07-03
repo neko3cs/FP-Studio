@@ -170,8 +170,7 @@ function readSchemaVersion(native: Database.Database): string | null {
   }
 
   const row = native.prepare('SELECT version FROM schema_version WHERE id = 1').get() as
-    | { version: string }
-    | undefined
+    { version: string } | undefined
   return row?.version ?? null
 }
 
