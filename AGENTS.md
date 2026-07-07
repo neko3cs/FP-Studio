@@ -2,7 +2,7 @@
 
 ## Key References
 
-- `docs/requirements_project-startup.md` — Initial requirements definition (startup phase). Some items noted as future work have since been implemented (e.g., Excel export). Treat the codebase as authoritative for current state.
+- `docs/Concept.md` — Project concept document (startup phase). Frames the background, problem, and initial requirements. Some items noted as future work have since been implemented (e.g., Excel export). Treat the codebase as authoritative for current state.
 - `src/README.md` — Developer-facing build, test, and distribution instructions.
 
 ## What This Project Is (and Is Not)
