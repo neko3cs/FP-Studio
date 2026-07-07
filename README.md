@@ -9,7 +9,7 @@ FP Studioは、ソフトウェア開発の規模計測を、もっともシン�
 - **Private.** 重要な見積もりデータは、ローカルのSQLiteに安全に保存。
 - **Standard.** IFPUG準拠のロジックを搭載。
 
-![](docs/design-on-dev.png)
+![](docs/app_screenshot/MainWindow.png)
 
 ## これは何ができるアプリ？
 
