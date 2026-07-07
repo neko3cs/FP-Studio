@@ -1,4 +1,4 @@
-# FP Studio Startup 要件定義書
+# FP-Studio 企画書
 
 ## 1. 背景
 
