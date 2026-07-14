@@ -1,17 +1,10 @@
 import { desc, eq } from 'drizzle-orm'
 
-import type {
-  DifficultyRule,
-  FunctionEntry,
-  FunctionType,
-  ProjectDetail,
-  StudioSettings,
-  WeightTable
-} from '@shared/fp'
+import type { FunctionEntry, FunctionType, ProjectDetail, StudioSettings } from '@shared/fp'
 
 import type { DatabaseContext } from '../database/client'
 import { functionEntriesTable, projectsTable, settingsTable } from '../database/schema'
-import { DEFAULT_STUDIO_SETTINGS } from '@shared/fp'
+import { buildStudioSettings } from './settings-parsing'
 
 interface ProjectRecord extends Pick<
   ProjectDetail,
@@ -72,50 +65,8 @@ function upsertSetting(db: DatabaseContext['db'], key: string, value: string): v
     .run()
 }
 
-function parseNumberSetting(value: unknown, fallback: number): number {
-  const parsed =
-    typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : undefined
-
-  return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : fallback
-}
-
-function parseJsonSetting<T>(value: unknown, fallback: T): T {
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value) as T
-    } catch {
-      return fallback
-    }
-  }
-
-  return fallback
-}
-
 function readSettings(db: DatabaseContext['db']): StudioSettings {
-  const rows = db.select().from(settingsTable).all()
-  const map = rows.reduce<Record<string, string>>((acc, row) => {
-    acc[row.key] = row.value
-    return acc
-  }, {})
-
-  const difficultyRules = parseJsonSetting<readonly DifficultyRule[]>(
-    map['difficultyRules'],
-    DEFAULT_STUDIO_SETTINGS.difficultyRules
-  )
-
-  const weightTable = parseJsonSetting<WeightTable>(
-    map['weightTable'],
-    DEFAULT_STUDIO_SETTINGS.weightTable
-  )
-
-  return {
-    defaultProductivity: parseNumberSetting(
-      map['defaultProductivity'],
-      DEFAULT_STUDIO_SETTINGS.defaultProductivity
-    ),
-    difficultyRules,
-    weightTable
-  }
+  return buildStudioSettings(db.select().from(settingsTable).all())
 }
 
 export function createStudioRepository(databaseContext: DatabaseContext): StudioRepository {

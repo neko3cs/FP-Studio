@@ -1,3 +1,11 @@
+import { afterEach } from 'vitest'
+import { cleanup } from '@testing-library/react'
+
+// 各テスト後にレンダリング結果を破棄し、testid の重複（DOM 累積）を防ぐ。
+afterEach(() => {
+  cleanup()
+})
+
 function applyNodeFilterPolyfill(): void {
   if (typeof globalThis.NodeFilter === 'undefined') {
     class PolyfilledNodeFilter {
