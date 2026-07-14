@@ -111,22 +111,25 @@ Use the `/test-ts-project` skill to run format → unit → coverage → mutatio
 - **VAF (補正係数) support not implemented.** Requirements note this as a future consideration. No current blocker — it is a scope decision.
 - **Custom weight table (enterprise master management screen) not implemented.** The `settings` table already stores `weightTable` as JSON, so infrastructure exists. The UI for editing it was removed in Issue #1 and is currently read-only.
 
+### Test suite gaps (noted 2026-07-14, pending review)
+
+- **`vitest.config.ts` `coverage.include` references a non-existent file.** It lists `src/renderer/src/hooks/useSettingsForm.ts` (no longer exists) and omits the actual `useProjectProductivityForm.ts`. The `stryker.config.json` `mutate` list is correct, so the two are out of sync.
+- **`export/project-excel.ts` has no direct test.** `handlers.test.ts` fully mocks `buildProjectWorkbook`, so the Excel-formula generation is unverified — high regression risk given it intentionally replicates `analyzeFunctionPoint()` logic and must stay in sync (see Implicit Constraints).
+- **Component tests are excluded from coverage/mutation measurement.** `ProjectSummaryCards.tsx` / `FunctionEntryForm.tsx` have tests but appear in neither `coverage.include` nor `stryker.mutate`, so they contribute nothing to the measured scores.
+- **`studio-repository.ts` (real SQLite layer) has no direct test.** It is mocked in the service-layer tests; actual DB interaction is unverified.
+
 ## Incidents
 
 | Date | What went wrong | Prevention |
 | :--- | :--- | :--- |
 | 2026-07-03 | `app-paths.test.ts` hardcoded the expected path as a POSIX literal (`/tmp/appdata/FP Studio`), which fails on Windows because `path.join` returns backslash-separated paths there | Build expected path values with `join()` (as the other tests in the same file already did) instead of hardcoding a separator style |
 
-## Current State (2026-07-03)
+## Handoff Snapshot (2026-07-14)
 
-- Version: **v0.2.1** on `main`; branch `chore/update-packages-20260703` only bumps dependency versions (no app version change).
-- Branch coverage: **95%**; mutation score: **98.29%** (unchanged after this round of dependency updates)
-- E2E (Playwright): covers core project and function entry flows
-- **Recent changes:**
-  - PR [#7](https://github.com/neko3cs/FP-Studio/pull/7) (open): npm dependencies bumped to latest within existing semver ranges via `pnpm update` (majors like Electron 43 / ESLint 10 deliberately left out of range); fixed the Windows-only `app-paths.test.ts` failure (see Incidents)
-  - All npm packages updated to latest (including major versions: TypeScript 6, Vite 8, Tailwind 4, electron-vite 6 beta)
-  - All tests rewritten in TDD specification style: Japanese natural-language names, nested `describe` hierarchy, English names translated to Japanese
-  - Property-based tests (fast-check) added for `fp.ts` core logic
-- **Known surviving mutants (6):** `duplicateProject`/`renameProject` return values not asserted in `handlers.test.ts`; one `??` vs `&&` edge case and one `undefined` guard in `studio-service.ts`. Not blocking — coverage and mutation score both above 90%.
-- **No known open bugs.** Branch `main` is clean; PR #7 pending review/merge.
-- Next likely work: new feature requests via GitHub Issues.
+- Version: **v0.2.1** on `main`. Working branch `test/review-20260714` (test-review pass; only `AGENTS.md` changed so far).
+- Full quality gate re-run on 2026-07-14: format / lint / typecheck all clean; **126 unit tests pass** (13 files).
+- **Branch coverage: 95%** (76/80 branches); **mutation score: 98.29%** (345 killed / 6 survived / 0 no-cov). Both above the 90% bar.
+- E2E (Playwright) **not run this pass** (requires full `pnpm build` + Electron download); last known green on core project / function-entry flows.
+- **Surviving mutants (6):** `register-handlers.ts` `duplicateProject`/`renameProject` arrow bodies (return value unasserted), 2 in `handlers.ts`, 2 in `studio-service.ts` (`??` vs `&&` at :144, `!== undefined` guard at :325). Not blocking.
+- Coverage measures 9 files; `useProjectProductivityForm.ts` is mutation-tested (100%) but **excluded from coverage measurement** — see Open Issues → Test suite gaps.
+- **No known open bugs.**
