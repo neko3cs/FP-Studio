@@ -92,4 +92,54 @@ describe('FunctionEntryForm', () => {
 
     expect(screen.queryByTestId('function-help-dialog-title')).toBeNull()
   })
+
+  it('DET のヘルプボタンをクリックするとダイアログに DET の説明を表示する', () => {
+    renderForm()
+
+    const [detHelpButton] = screen.getAllByTestId('function-help-button-det')
+    fireEvent.click(detHelpButton)
+
+    expect(screen.getByTestId('function-help-dialog-title').textContent).toBe('DET とは？')
+    expect(screen.getByTestId('function-help-dialog-description').textContent).toContain(
+      'Data Element'
+    )
+  })
+
+  it('プレビューがあるとき難易度とFPをバッジに表示し、無いとき「入力待ち」を表示する', () => {
+    renderForm({ preview: { difficulty: 'Average', functionPoints: 4 } })
+    expect(screen.getByTestId('function-preview').textContent).toBe('Average / 4 FP')
+  })
+
+  it('プレビューが無いときバッジに「入力待ち」を表示する', () => {
+    renderForm({ preview: null })
+    expect(screen.getByTestId('function-preview').textContent).toBe('入力待ち')
+  })
+
+  it('追加モードでアコーディオンを閉じると入力フォームを隠す', () => {
+    renderForm()
+    expect(screen.getByTestId('det-input')).toBeTruthy()
+
+    fireEvent.click(screen.getByTestId('function-form-accordion-button'))
+
+    expect(screen.queryByTestId('det-input')).toBeNull()
+  })
+
+  it('編集モードでは折りたたみ操作をしても入力フォームを表示し続ける', () => {
+    renderForm({ isEditing: true })
+
+    fireEvent.click(screen.getByTestId('function-form-accordion-button'))
+
+    expect(screen.getByTestId('det-input')).toBeTruthy()
+    expect(screen.getByTestId('cancel-edit-button')).toBeTruthy()
+  })
+
+  it('canSubmit が false または isBusy のとき追加ボタンを無効化する', () => {
+    renderForm({ canSubmit: false })
+    expect(screen.getByTestId('add-function-button')).toHaveProperty('disabled', true)
+  })
+
+  it('canSubmit が true かつ isBusy でないとき追加ボタンを有効化する', () => {
+    renderForm({ canSubmit: true, isBusy: false })
+    expect(screen.getByTestId('add-function-button')).toHaveProperty('disabled', false)
+  })
 })
