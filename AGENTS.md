@@ -105,6 +105,9 @@ Use the `/test-ts-project` skill to run format → unit → coverage → mutatio
 - `electron-updater` auto-update is wired up in `main/update-manager.ts`. Update state is pushed to the renderer via IPC events (`UPDATE_EVENTS.stateChanged`). Do not block the main process during update checks.
 - `pnpm install`/`pnpm update` can fail with `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (stale `node_modules` vs. `.npmrc`'s `shamefully-hoist=true`) or hang waiting on a TTY prompt to remove `node_modules`. Run `CI=true pnpm install` to resolve non-interactively.
 - After bumping the `electron` devDependency, the first `pnpm test:e2e` run can time out on the first spec while Playwright downloads the new Electron binary mid-run. Re-run the suite once the binary is cached — this is not a real regression.
+- `better-sqlite3` is compiled for Electron (`electron-builder install-app-deps`), so its ABI does not match the Node that runs vitest. The repository's DB-query layer therefore cannot be unit-tested under vitest (only Playwright e2e, which rebuilds for Electron, exercises real SQLite). The pure settings-parsing logic was extracted to `repositories/settings-parsing.ts` so it can be unit- and mutation-tested without the native binding.
+- Stryker `mutate` is intentionally scoped to pure logic. Presentation-heavy files — Fluent UI components (`ProjectSummaryCards.tsx`, `FunctionEntryForm.tsx`) and the Excel workbook assembly (`export/project-excel.ts`) — are in `coverage.include` but NOT in `stryker.mutate`, because mutating layout/markup/formatting produces low-value cosmetic survivors. The sync-critical Excel formulas are instead guarded by exact-string assertions in `project-excel.test.ts`.
+- In `fp.ts`, `DifficultyRule.det` is `[mediumStart, highStart]` and buckets with strict `<` (the value is the *start* of the next bucket), while `reference` is `[low, high]` and buckets with `<=`. The Excel difficulty formula must mirror this exactly: `det < …`, `ref <= …`.
 
 ## Open Issues
 
@@ -116,17 +119,14 @@ Use the `/test-ts-project` skill to run format → unit → coverage → mutatio
 | Date | What went wrong | Prevention |
 | :--- | :--- | :--- |
 | 2026-07-03 | `app-paths.test.ts` hardcoded the expected path as a POSIX literal (`/tmp/appdata/FP Studio`), which fails on Windows because `path.join` returns backslash-separated paths there | Build expected path values with `join()` (as the other tests in the same file already did) instead of hardcoding a separator style |
+| 2026-07-14 | Excel export difficulty formula used `<=` for DET buckets, diverging from `analyzeFunctionPoint`'s strict `<` at boundaries (58 divergent cases on Excel recalc, e.g. EI DET=5/16) | Guard the JS↔formula sync with exact-string assertions in `project-excel.test.ts`; remember DET uses `<`, reference uses `<=` |
 
-## Current State (2026-07-03)
+## Handoff Snapshot (2026-07-14)
 
-- Version: **v0.2.1** on `main`; branch `chore/update-packages-20260703` only bumps dependency versions (no app version change).
-- Branch coverage: **95%**; mutation score: **98.29%** (unchanged after this round of dependency updates)
-- E2E (Playwright): covers core project and function entry flows
-- **Recent changes:**
-  - PR [#7](https://github.com/neko3cs/FP-Studio/pull/7) (open): npm dependencies bumped to latest within existing semver ranges via `pnpm update` (majors like Electron 43 / ESLint 10 deliberately left out of range); fixed the Windows-only `app-paths.test.ts` failure (see Incidents)
-  - All npm packages updated to latest (including major versions: TypeScript 6, Vite 8, Tailwind 4, electron-vite 6 beta)
-  - All tests rewritten in TDD specification style: Japanese natural-language names, nested `describe` hierarchy, English names translated to Japanese
-  - Property-based tests (fast-check) added for `fp.ts` core logic
-- **Known surviving mutants (6):** `duplicateProject`/`renameProject` return values not asserted in `handlers.test.ts`; one `??` vs `&&` edge case and one `undefined` guard in `studio-service.ts`. Not blocking — coverage and mutation score both above 90%.
-- **No known open bugs.** Branch `main` is clean; PR #7 pending review/merge.
-- Next likely work: new feature requests via GitHub Issues.
+- Version: **v0.2.1** on `main`. Working branch `test/review-20260714` (test-review pass).
+- Full quality gate re-run on 2026-07-14: format / lint / typecheck clean; **153 unit tests pass** (15 files).
+- **Branch coverage: 94.82%** (110/116); **mutation score: 98.06%** (354 killed / 7 survived / 0 no-cov). Both above the 90% bar.
+- Test-review changes: added `project-excel.test.ts` (Excel export + formula-sync guard) and fixed the DET formula bug (see Incidents); extracted `repositories/settings-parsing.ts` with a unit/mutation test; strengthened `FunctionEntryForm` tests; added RTL `cleanup` to `test/setup.ts`; synced `vitest.config.ts` `coverage.include` and `stryker.config.json` `mutate`.
+- E2E (Playwright) **not run this pass** (requires full `pnpm build` + Electron download).
+- **Surviving mutants (7):** `handlers.ts` (2), `register-handlers.ts` (2), `studio-service.ts` (2), `settings-parsing.ts` (1). Not blocking.
+- **No known open bugs.**

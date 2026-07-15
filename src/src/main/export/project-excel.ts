@@ -48,7 +48,7 @@ fnType, C${rowNumber},
 det, D${rowNumber},
 ref, E${rowNumber},
 rowIndex, MATCH(fnType, ${typeRange}, 0),
-detBucket, IF(det<=INDEX(${detBounds}, rowIndex), 0, IF(det<=INDEX(${detBoundsHigh}, rowIndex), 1, 2)),
+detBucket, IF(det<INDEX(${detBounds}, rowIndex), 0, IF(det<INDEX(${detBoundsHigh}, rowIndex), 1, 2)),
 refBucket, IF(ref<=INDEX(${referenceBounds}, rowIndex), 0, IF(ref<=INDEX(${referenceBoundsHigh}, rowIndex), 1, 2)),
 matrix, {"Low","Low","Average";"Low","Average","High";"Average","High","High"},
 INDEX(matrix, refBucket+1, detBucket+1)
