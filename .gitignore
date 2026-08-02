@@ -180,3 +180,6 @@ dist
 .stryker-tmp
 test-results
 reports
+
+# Claude Code worktrees (local checkouts, not repo content)
+.claude/worktrees/
