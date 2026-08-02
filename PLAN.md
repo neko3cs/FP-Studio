@@ -22,7 +22,7 @@
 ## Next
 
 - Migration is complete on branch `docs/design-docs-migration`; awaiting permission to commit and open the PR.
-- After the PR merges, fold this file down to the `Latest Quality Gate` section only — the migration's Why now lives in ADR-007.
+- After the PR merges, fold this file down to the `Latest Quality Gate` section only — the migration's Why now lives in ADR-008.
 
 ## Undecided
 

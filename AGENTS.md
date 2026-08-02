@@ -14,10 +14,10 @@ When a document and the code disagree, **the code is authoritative** — fix the
 
 **Non-negotiables. Do not propose or implement anything that breaks these:**
 
-- IFPUG standard difficulty rules and weight tables are **read-only**. Do not re-add UI for editing them — that UI existed once and was deliberately reverted in Issue #1 (see ADR-005).
-- VAF (Value Adjustment Factor) is **intentionally excluded**. The tool counts UFP only. Do not add VAF calculation without an explicit user request (see ADR-004).
-- All business data stays **local** (SQLite). No cloud sync. The update feed is the only outbound network call, and it never carries user data (see ADR-008).
-- `analyzeFunctionPoint()` in `shared/fp.ts` is the **single source of truth** for difficulty/FP. The Excel export's formulas are the one deliberate duplicate — change both together (see ADR-006).
+- IFPUG standard difficulty rules and weight tables are **read-only**. Do not re-add UI for editing them — that UI existed once and was deliberately reverted in Issue #1 (see ADR-007).
+- VAF (Value Adjustment Factor) is **intentionally excluded**. The tool counts UFP only. Do not add VAF calculation without an explicit user request (see ADR-002).
+- All business data stays **local** (SQLite). No cloud sync. The update feed is the only outbound network call, and it never carries user data (see ADR-006).
+- `analyzeFunctionPoint()` in `shared/fp.ts` is the **single source of truth** for difficulty/FP. The Excel export's formulas are the one deliberate duplicate — change both together (see ADR-005).
 
 Architecture, layering, data model, and the full ADR log live in `docs/`. Source code is under `src/` (that subdirectory is the pnpm workspace root).
 
