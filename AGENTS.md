@@ -76,6 +76,22 @@ gh run view <run-id> --log-failed
 Manual dispatch requires the workflow to exist on the default branch.
 Download reports and failure traces from the run's Artifacts section.
 
+## Releasing
+
+Releases are run by `.github/workflows/release.yml` on a `v*` tag push. Rationale and the unsigned-build trade-offs are in ADR-009.
+
+1. Bump `version` in `src/package.json` and get it merged to `main` (normal commit/PR rules apply).
+2. Push the tag `v<version>` (e.g. `v0.3.0`) from that commit. The workflow fails if the tag and `package.json` disagree. Old `release-x.y.z` tags are legacy — do not reuse that format; electron-builder expects the `v` prefix.
+3. The workflow runs the full Tests workflow, then each OS job uploads into a single **draft** release.
+4. Before asking the user to publish, confirm the draft contains `latest.yml`, `latest-mac.yml`, `latest-linux.yml` and the `.blockmap` files, and that each `url` in them matches an uploaded asset name.
+5. **Promoting the draft to a published release ships an update to every user — get explicit user approval first.**
+
+- Never build and upload release assets by hand. Manual uploads omitted `latest*.yml`, which silently broke auto-update for every release up to 0.2.1.
+- Builds are intentionally unsigned (cost). Do not add code signing or notarization unless the user asks. Consequence: macOS auto-update does not work (Squirrel.Mac requires a signature); Windows auto-update does.
+- `artifactName` in `electron-builder.yml` uses `${name}` (`fp-studio`), not `${productName}`. The space in "FP Studio" makes uploaded file names diverge from the URLs written into `latest*.yml`.
+- To check packaging locally without signing credentials (verified with electron-builder 26.15.3):
+  `pnpm exec electron-vite build && CSC_IDENTITY_AUTO_DISCOVERY=false pnpm exec electron-builder --mac --publish never`, then inspect `dist/latest-mac.yml`. Delete `dist/` afterwards.
+
 ## Development Rules
 
 - **Never edit binary build artifacts** directly.
