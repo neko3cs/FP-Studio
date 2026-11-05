@@ -46,10 +46,10 @@ CI design is documented in `docs/architecture.md` under 「CI での実行」.
 
 ## Releasing
 
-Releases are run by `.github/workflows/release.yml` on a `v*` tag push. Rationale and the unsigned-build trade-offs are in ADR-009.
+Releases are run by `.github/workflows/release.yml` on a `release-*` tag push. Rationale and the unsigned-build trade-offs are in ADR-009.
 
 1. Bump `version` in `src/package.json` and get it merged to `main` (normal commit/PR rules apply).
-2. Push the tag `v<version>` (e.g. `v0.3.0`) from that commit. The workflow fails if the tag and `package.json` disagree. Old `release-x.y.z` tags are legacy — do not reuse that format; electron-builder expects the `v` prefix.
+2. Push the tag `release-<version>` (e.g. `release-0.3.0`) from that commit. The workflow fails if the tag and `package.json` disagree. Do not switch to electron-builder's default `v` prefix: the project kept `release-` for continuity with past tags, and `tagNamePrefix` in `electron-builder.yml` must stay in sync with the workflow trigger and its version check.
 3. The workflow runs the full Tests workflow, then each OS job uploads into a single **draft** release.
 4. Before asking the user to publish, confirm the draft contains `latest.yml`, `latest-mac.yml`, `latest-linux.yml` and the `.blockmap` files, and that each `url` in them matches an uploaded asset name.
 5. **Promoting the draft to a published release ships an update to every user — get explicit user approval first.**

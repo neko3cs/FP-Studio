@@ -45,3 +45,4 @@ publish:
   provider: github
   owner: neko3cs
   repo: FP-Studio
+  tagNamePrefix: release-

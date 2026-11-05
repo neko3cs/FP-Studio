@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["release-*"]
 
 permissions:
   contents: read
@@ -34,9 +34,10 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          version="v$(node -p "require('./package.json').version")"
-          if [ "$TAG" != "$version" ]; then
-            echo "::error::Tag $TAG does not match package.json version $version"
+          # Must match tagNamePrefix in electron-builder.yml.
+          expected="release-$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$expected" ]; then
+            echo "::error::Tag $TAG does not match expected tag $expected"
             exit 1
           fi
       # Create the draft up front so the parallel platform jobs upload into one release

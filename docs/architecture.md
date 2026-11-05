@@ -102,9 +102,9 @@ ADR番号は決定した順（git履歴上の実装順）に振っている。
 
 ### ADR-009 リリースを GitHub Actions で行い、当面はコード署名しない
 
-- **決定**: `v*` タグの push を起点に、[Release ワークフロー](../.github/workflows/release.yml) が Windows / macOS / Linux それぞれのランナーでパッケージングし、`electron-builder --publish always` で GitHub Releases の draft に成果物と更新情報（`latest*.yml`・`.blockmap`）を上げる。公開（draft 解除）は手動で行う。コード署名・公証は行わない
+- **決定**: `release-*` タグの push を起点に、[Release ワークフロー](../.github/workflows/release.yml) が Windows / macOS / Linux それぞれのランナーでパッケージングし、`electron-builder --publish always` で GitHub Releases の draft に成果物と更新情報（`latest*.yml`・`.blockmap`）を上げる。公開（draft 解除）は手動で行う。コード署名・公証は行わない
 - **背景**: 手動アップロードでは `latest*.yml` が添付されず、ADR-006 の自動更新が機能していなかった。`better-sqlite3` はネイティブモジュールのためクロスビルドできず、OS ごとのランナーが必要。署名証明書（Apple Developer Program、Windows のコード署名証明書）は費用がかかるため個人開発の現段階では見送る
-- **却下した選択肢**: **手動ビルドとアップロードの継続** — 更新情報の添付漏れが起きる。**タグ名 `release-x.y.z` の継続** — electron-builder は `v` 付きタグを前提とする。**最初から署名する** — 費用に見合う利用者規模がまだない
+- **却下した選択肢**: **手動ビルドとアップロードの継続** — 更新情報の添付漏れが起きる。**タグ名を electron-builder 既定の `vx.y.z` に変える** — 既存の `release-x.y.z` と並びが崩れる。`tagNamePrefix` で接頭辞を合わせられるため、変える理由がない。**最初から署名する** — 費用に見合う利用者規模がまだない
 - **トレードオフ**: 未署名のため、Windows では初回起動時に SmartScreen の警告が出る（自動更新は動く）。macOS では Gatekeeper の許可操作が必要で、**Squirrel.Mac が署名を要求するため自動更新は動かない**。署名を導入するときは新しい ADR を足し、シークレット登録と `mac.notarize` / `win.sign` の設定を追加する。成果物名はスペースを含む `productName` ではなく `name`（`fp-studio`）を使い、GitHub 上のファイル名と `latest*.yml` の URL を一致させる
 
 ## レイヤー構成と依存の方向
