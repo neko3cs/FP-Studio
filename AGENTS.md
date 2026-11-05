@@ -50,6 +50,7 @@ Releases are run by `.github/workflows/release.yml` on a `release-*` tag push. R
 
 1. Bump `version` in `src/package.json` and get it merged to `main` (normal commit/PR rules apply).
 2. Push the tag `release-<version>` (e.g. `release-0.3.0`) from that commit. The workflow fails if the tag and `package.json` disagree. Do not switch to electron-builder's default `v` prefix: the project kept `release-` for continuity with past tags, and `tagNamePrefix` in `electron-builder.yml` must stay in sync with the workflow trigger and its version check.
+   Alternatively run the workflow manually (Actions tab or `gh workflow run release.yml --ref main`): it tags `main`'s HEAD itself and refuses to run on other branches or if the tag already exists. Do not use the GitHub "Draft a new release" form — it only creates the tag on publish, which would ship an empty release.
 3. The workflow runs the full Tests workflow, then each OS job uploads into a single **draft** release.
 4. Before asking the user to publish, confirm the draft contains `latest.yml`, `latest-mac.yml`, `latest-linux.yml` and the Windows/mac `.blockmap` files, and that each `url` in them matches an uploaded asset name. Linux has no separate `.blockmap` — the AppImage embeds it. `gh release view <tag>` and `gh release download <tag> -p <file> -O -` work on drafts.
 5. **Promoting the draft to a published release ships an update to every user — get explicit user approval first.**
