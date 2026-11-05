@@ -239,8 +239,8 @@ flowchart TB
 
 - **DB クエリ層は単体テストしない。** `better-sqlite3` が Electron 用にビルドされており、vitest を動かす Node と ABI が合わないため（ADR-003）。実 SQLite を通る検証は Playwright の E2E に委ねる。純粋な設定パース処理だけは `repositories/settings-parsing.ts` へ切り出し、ネイティブバインディング無しで単体・変異テストできるようにしてある
 - **変異テストの対象は純粋ロジックに絞る。** Fluent UI コンポーネントと Excel ブック組み立ては、カバレッジ計測の対象には含めるが変異対象からは外す。レイアウトや書式を変異させても意味のある生存変異体にならないため。同期が要る Excel 数式は完全一致アサーションで別途守る
-- 閾値は設定ファイルを正とする（`vitest.config.ts` の `coverage.thresholds`、`stryker.config.json` の `thresholds`）。直近の実測値は `PLAN.md` に置く
-- 実行手順は `/test-ts-project` スキル、コマンド一覧は `AGENTS.md` を参照
+- 閾値は設定ファイルを正とする（`vitest.config.ts` の `coverage.thresholds`、`stryker.config.json` の `thresholds`）
+- 実行手順は `test-code` スキル、コマンド一覧は `AGENTS.md` を参照
 - **テストケースそのものは文書化しない。** テストコードを正とする。機能ごとの観点は [design.md](design.md) に書く
 
 #### CI での実行
