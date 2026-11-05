@@ -41,8 +41,11 @@ linux:
   maintainer: electronjs.org
   category: Utility
 npmRebuild: false
-publish:
+publish: &github-release
   provider: github
   owner: neko3cs
   repo: FP-Studio
   tagNamePrefix: release-
+# snap defaults to the Snap Store, which needs snapcraft and an account; attach it to the GitHub release instead.
+snap:
+  publish: *github-release
