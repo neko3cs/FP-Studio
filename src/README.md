@@ -52,22 +52,7 @@ pnpm test:e2e
 
 ### GitHub Actions
 
-[Tests ワークフロー](../.github/workflows/test.yml) は、PR の作成・更新、`main` への push、手動実行（`workflow_dispatch`）で起動します。Actions の「Tests」から「Run workflow」でブランチを選択して実行できます（手動実行はワークフローがデフォルトブランチに入った後に利用できます）。
-
-以下の10ジョブは依存関係を設けず、並列に実行します。matrix の `fail-fast: false` により、別の環境やチェックが失敗しても残りの結果を収集します。
-
-| ジョブ                                     | 環境                                   | 実行内容                                                   |
-| :----------------------------------------- | :------------------------------------- | :--------------------------------------------------------- |
-| format / lint / typecheck / pbt（4ジョブ） | Ubuntu 24.04                           | 書式の検査、静的解析、型チェック、PBT                      |
-| unit（3ジョブ）                            | Ubuntu 24.04 / Windows 2025 / macOS 15 | 全単体テストとカバレッジ（PBTも含む）                      |
-| mutation（1ジョブ）                        | Ubuntu 24.04                           | Stryker（ジョブ内のワーカーは2並列）                       |
-| e2e（2ジョブ）                             | Windows 2025 / macOS 15                | Electron向けネイティブ依存の再構築、フルビルド、Playwright |
-
-ジョブごとにロックファイルを固定して依存関係をインストールし、pnpm ストアをキャッシュします。`node_modules` は OS と Electron ABI に依存するためジョブ間で共有しません。E2E は初回テストのタイムアウトを避けるため、先に Electron バイナリを取得します。
-
-CI の format は `pnpm exec prettier --check . ../.github` で検査だけを行います。ローカルで書式を直す場合は `pnpm format` を使い、ワークフローも変更した場合は `pnpm exec prettier --write ../.github` を実行します。生成レポートは書式検査から除外しています。
-
-カバレッジ、変異テストのレポート、E2E の実行結果（失敗時の trace を含む）は、失敗時もアップロードを試み、Actions の Artifacts に7日間保存します。合否の閾値は既存の `vitest.config.ts` と `stryker.config.json` に従います。同じブランチの新しい実行が始まると、古い実行をキャンセルします。
+CI の構成・方針は [アーキテクチャの「CI での実行」](../docs/architecture.md#ci-での実行)、操作コマンドは [AGENTS.md](../AGENTS.md#commands) を参照してください。
 
 このフォルダ内にいる状態でテスト関連コマンドを実行します。
 

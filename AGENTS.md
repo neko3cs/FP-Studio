@@ -56,6 +56,26 @@ pnpm build
 
 Use the `/test-ts-project` skill to run format → unit → coverage → mutation tests in sequence.
 
+### GitHub Actions
+
+CI design is documented in `docs/architecture.md` under 「CI での実行」.
+
+```bash
+# Check formatting, including workflow files
+pnpm exec prettier --check . ../.github
+
+# Format workflow files
+pnpm exec prettier --write ../.github
+
+# Trigger CI and inspect results
+gh workflow run test.yml --ref <branch>
+gh run list --workflow test.yml --branch <branch>
+gh run view <run-id> --log-failed
+```
+
+Manual dispatch requires the workflow to exist on the default branch.
+Download reports and failure traces from the run's Artifacts section.
+
 ## Development Rules
 
 - **Never edit binary build artifacts** directly.
