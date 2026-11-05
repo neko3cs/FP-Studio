@@ -11,10 +11,10 @@ FP Studio は、Electron + Vite で構成されたデスクトップアプリケ
 
 ## セットアップ
 
-リポジトリルート（`/Users/neko3cs/src/FP-Studio`）で依存関係をインストールします。
+リポジトリの `src/` ディレクトリで依存関係をインストールします。CI と同じ Node.js `26.13.0` と、`package.json` の `packageManager` に指定した pnpm を使用します。
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 `better-sqlite3` は Electron 向けのネイティブモジュールのため、`pnpm dev` / `pnpm start` を実行すると自動的に Electron ABI に合わせた再ビルドが走ります。不要なトラブルを避けるには Node のバージョンを固定し、`pnpm install` をやり直した後に `pnpm dev` を再起動してください。
@@ -49,6 +49,10 @@ pnpm test:e2e
 ```
 
 ## 開発者向けテスト
+
+### GitHub Actions
+
+CI の構成・方針は [アーキテクチャの「CI での実行」](../docs/architecture.md#ci-での実行)、操作コマンドは [AGENTS.md](../AGENTS.md#commands) を参照してください。
 
 このフォルダ内にいる状態でテスト関連コマンドを実行します。
 
