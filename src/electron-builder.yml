@@ -15,7 +15,7 @@ win:
   executableName: FP Studio
   icon: build/FP Studio Icon.ico
 nsis:
-  artifactName: ${productName}-${version}-setup.${ext}
+  artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
@@ -28,19 +28,24 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+  artifactName: ${name}-${version}-${arch}-mac.${ext}
 dmg:
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${version}-${arch}.${ext}
 linux:
   target:
     - AppImage
     - snap
     - deb
   icon: build/FP Studio Icon.png
-  artifactName: ${productName}-${version}.${ext}
+  artifactName: ${name}-${version}.${ext}
   maintainer: electronjs.org
   category: Utility
 npmRebuild: false
-publish:
+publish: &github-release
   provider: github
   owner: neko3cs
   repo: FP-Studio
+  tagNamePrefix: release-
+# snap defaults to the Snap Store, which needs snapcraft and an account; attach it to the GitHub release instead.
+snap:
+  publish: *github-release

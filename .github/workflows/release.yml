@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags: ["release-*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Must differ from the group in the called test.yml, or the reusable call deadlocks.
+  group: release-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: src
+
+env:
+  CI: true
+
+jobs:
+  prepare:
+    name: Prepare draft release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Verify tag matches package.json version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          # Must match tagNamePrefix in electron-builder.yml.
+          expected="release-$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$expected" ]; then
+            echo "::error::Tag $TAG does not match expected tag $expected"
+            exit 1
+          fi
+      # Create the draft up front so the parallel platform jobs upload into one release
+      # instead of racing to create duplicates.
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
+            echo "Release $TAG already exists"
+          else
+            gh release create "$TAG" --repo "$REPO" --draft --verify-tag --title "$TAG" --generate-notes
+          fi
+
+  test:
+    name: Tests
+    uses: ./.github/workflows/test.yml
+
+  publish:
+    name: Publish (${{ matrix.platform }})
+    needs: [prepare, test]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            platform: win
+          - os: macos-15
+            platform: mac
+          - os: ubuntu-24.04
+            platform: linux
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Build
+        run: pnpm build
+      - name: Package and upload to the draft release
+        run: pnpm exec electron-builder --${{ matrix.platform }} --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Code signing is not configured yet; skip keychain identity lookup on macOS.
+          CSC_IDENTITY_AUTO_DISCOVERY: false

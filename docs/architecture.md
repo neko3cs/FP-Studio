@@ -100,6 +100,13 @@ ADR番号は決定した順（git履歴上の実装順）に振っている。
 - **却下した選択肢**: draw.io 継続 — レビューで図の変更点を確認できない。**画像を手描き** — 更新されなくなる
 - **トレードオフ**: Mermaid はユースケース図をネイティブに描けないため、フローチャートで代用する。込み入ったレイアウトの細かい制御はできない
 
+### ADR-009 リリースを GitHub Actions で行い、当面はコード署名しない
+
+- **決定**: `release-*` タグの push を起点に、[Release ワークフロー](../.github/workflows/release.yml) が Windows / macOS / Linux それぞれのランナーでパッケージングし、`electron-builder --publish always` で GitHub Releases の draft に成果物と更新情報（`latest*.yml`・`.blockmap`）を上げる。公開（draft 解除）は手動で行う。コード署名・公証は行わない
+- **背景**: 手動アップロードでは `latest*.yml` が添付されず、ADR-006 の自動更新が機能していなかった。`better-sqlite3` はネイティブモジュールのためクロスビルドできず、OS ごとのランナーが必要。署名証明書（Apple Developer Program、Windows のコード署名証明書）は費用がかかるため個人開発の現段階では見送る
+- **却下した選択肢**: **手動ビルドとアップロードの継続** — 更新情報の添付漏れが起きる。**タグ名を electron-builder 既定の `vx.y.z` に変える** — 既存の `release-x.y.z` と並びが崩れる。`tagNamePrefix` で接頭辞を合わせられるため、変える理由がない。**最初から署名する** — 費用に見合う利用者規模がまだない
+- **トレードオフ**: 未署名のため、Windows では初回起動時に SmartScreen の警告が出る（自動更新は動く）。macOS では Gatekeeper の許可操作が必要で、**Squirrel.Mac が署名を要求するため自動更新は動かない**。署名を導入するときは新しい ADR を足し、シークレット登録と `mac.notarize` / `win.sign` の設定を追加する。成果物名はスペースを含む `productName` ではなく `name`（`fp-studio`）を使い、GitHub 上のファイル名と `latest*.yml` の URL を一致させる
+
 ## レイヤー構成と依存の方向
 
 依存は常に**上から下へ**の一方向。逆流させない。
@@ -232,13 +239,13 @@ flowchart TB
 
 - **DB クエリ層は単体テストしない。** `better-sqlite3` が Electron 用にビルドされており、vitest を動かす Node と ABI が合わないため（ADR-003）。実 SQLite を通る検証は Playwright の E2E に委ねる。純粋な設定パース処理だけは `repositories/settings-parsing.ts` へ切り出し、ネイティブバインディング無しで単体・変異テストできるようにしてある
 - **変異テストの対象は純粋ロジックに絞る。** Fluent UI コンポーネントと Excel ブック組み立ては、カバレッジ計測の対象には含めるが変異対象からは外す。レイアウトや書式を変異させても意味のある生存変異体にならないため。同期が要る Excel 数式は完全一致アサーションで別途守る
-- 閾値は設定ファイルを正とする（`vitest.config.ts` の `coverage.thresholds`、`stryker.config.json` の `thresholds`）。直近の実測値は `PLAN.md` に置く
-- 実行手順は `/test-ts-project` スキル、コマンド一覧は `AGENTS.md` を参照
+- 閾値は設定ファイルを正とする（`vitest.config.ts` の `coverage.thresholds`、`stryker.config.json` の `thresholds`）
+- 実行手順は `test-code` スキル、コマンド一覧は `AGENTS.md` を参照
 - **テストケースそのものは文書化しない。** テストコードを正とする。機能ごとの観点は [design.md](design.md) に書く
 
 #### CI での実行
 
-[Tests ワークフロー](../.github/workflows/test.yml) は、PR の作成・更新、`main` への push、手動実行（`workflow_dispatch`）を起点とする。ローカルの検証と同じスクリプトを使用し、独立した検証にはジョブ間の依存を設けず、以下の10ジョブを並列に実行する。
+[Tests ワークフロー](../.github/workflows/test.yml) は、PR の作成・更新、`main` への push、手動実行（`workflow_dispatch`）、Release ワークフローからの呼び出し（`workflow_call`）を起点とする。ローカルの検証と同じスクリプトを使用し、独立した検証にはジョブ間の依存を設けず、以下の10ジョブを並列に実行する。
 
 | ジョブ                                     | 環境                                   | 検証内容                                             |
 | :----------------------------------------- | :------------------------------------- | :--------------------------------------------------- |

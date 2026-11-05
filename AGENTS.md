@@ -5,8 +5,7 @@
 - `docs/architecture.md` — **Read this every session.** Technology choices, layer structure, dependency direction, invariants, and the ADR log (append-only).
 - `docs/design.md` — Read when working on a specific feature. Module/class structure, processing flows, state transitions, per-feature test perspectives.
 - `docs/requirements.md` / `docs/specification.md` — Why the product exists and what it must do. Read when a change touches scope, screens, or the data model.
-- `PLAN.md` — In-flight work and the latest quality-gate snapshot. Not a spec; it expires.
-- `src/README.md` — Developer-facing build, test, and distribution instructions.
+- `src/README.md` — Developer-facing build and test instructions.
 
 When a document and the code disagree, **the code is authoritative** — fix the document.
 
@@ -19,67 +18,51 @@ When a document and the code disagree, **the code is authoritative** — fix the
 - All business data stays **local** (SQLite). No cloud sync. The update feed is the only outbound network call, and it never carries user data (see ADR-006).
 - `analyzeFunctionPoint()` in `shared/fp.ts` is the **single source of truth** for difficulty/FP. The Excel export's formulas are the one deliberate duplicate — change both together (see ADR-005).
 
-Architecture, layering, data model, and the full ADR log live in `docs/`. Source code is under `src/` (that subdirectory is the pnpm workspace root).
-
 ## Commands
 
-All commands must be run from the `src/` directory.
+Run everything from `src/` (the pnpm workspace root), not the repo root.
 
 ```bash
-# Format
 pnpm format
-
-# Lint
 pnpm lint
-
-# Type check
 pnpm typecheck
-
-# Unit tests (Vitest)
-pnpm test
-
-# Unit tests with coverage
+pnpm test            # Vitest
 pnpm test:coverage
-
-# Mutation tests (Stryker)
-pnpm test:mutation
-
-# E2E tests (Playwright — requires a full build)
-pnpm test:e2e
-
-# Dev server
+pnpm test:mutation   # Stryker, slow
+pnpm test:e2e        # Playwright; does a full build first
 pnpm dev
-
-# Build (type-check + electron-vite build)
 pnpm build
 ```
 
-Use the `/test-ts-project` skill to run format → unit → coverage → mutation tests in sequence.
+Use the `test-code` skill for the full post-implementation quality gate.
 
 ### GitHub Actions
 
 CI design is documented in `docs/architecture.md` under 「CI での実行」.
 
-```bash
-# Check formatting, including workflow files
-pnpm exec prettier --check . ../.github
+- CI's format check covers workflow files too: `pnpm exec prettier --check . ../.github` (fix with `--write`). Plain `pnpm format` does not touch `../.github`.
+- `gh workflow run` only works once the workflow exists on the default branch.
+- Coverage, mutation reports and E2E traces are in each run's Artifacts (kept 7 days).
 
-# Format workflow files
-pnpm exec prettier --write ../.github
+## Releasing
 
-# Trigger CI and inspect results
-gh workflow run test.yml --ref <branch>
-gh run list --workflow test.yml --branch <branch>
-gh run view <run-id> --log-failed
-```
+Releases are run by `.github/workflows/release.yml` on a `release-*` tag push. Rationale and the unsigned-build trade-offs are in ADR-009.
 
-Manual dispatch requires the workflow to exist on the default branch.
-Download reports and failure traces from the run's Artifacts section.
+1. Bump `version` in `src/package.json` and get it merged to `main` (normal commit/PR rules apply).
+2. Push the tag `release-<version>` (e.g. `release-0.3.0`) from that commit. The workflow fails if the tag and `package.json` disagree. Do not switch to electron-builder's default `v` prefix: the project kept `release-` for continuity with past tags, and `tagNamePrefix` in `electron-builder.yml` must stay in sync with the workflow trigger and its version check.
+3. The workflow runs the full Tests workflow, then each OS job uploads into a single **draft** release.
+4. Before asking the user to publish, confirm the draft contains `latest.yml`, `latest-mac.yml`, `latest-linux.yml` and the Windows/mac `.blockmap` files, and that each `url` in them matches an uploaded asset name. Linux has no separate `.blockmap` — the AppImage embeds it. `gh release view <tag>` and `gh release download <tag> -p <file> -O -` work on drafts.
+5. **Promoting the draft to a published release ships an update to every user — get explicit user approval first.**
+
+- Never build and upload release assets by hand. Manual uploads omitted `latest*.yml`, which silently broke auto-update for every release up to 0.2.1.
+- Builds are intentionally unsigned (cost). Do not add code signing or notarization unless the user asks. Consequence: macOS auto-update does not work (Squirrel.Mac requires a signature); Windows auto-update does.
+- `artifactName` in `electron-builder.yml` uses `${name}` (`fp-studio`), not `${productName}`. The space in "FP Studio" makes uploaded file names diverge from the URLs written into `latest*.yml`.
+- To check packaging locally without signing credentials (verified with electron-builder 26.15.3):
+  `pnpm exec electron-vite build && CSC_IDENTITY_AUTO_DISCOVERY=false pnpm exec electron-builder --mac --publish never`, then inspect `dist/latest-mac.yml`. Delete `dist/` afterwards.
 
 ## Development Rules
 
-- **Never edit binary build artifacts** directly.
-- **Commit/push requires explicit user permission.** Follow the `git-rule` skill.
+- **Commit/push requires explicit user permission.**
 - Follow the TDD cycle enforced by the `test-as-tdd` skill. Conventions for layering, naming, error handling, and test naming are in `docs/architecture.md` (共通規約).
 - Keep the docs in sync when behavior changes: `docs/design.md` for module/flow changes, `docs/specification.md` for screens, data, or messages, `docs/architecture.md` for a new decision (append a new ADR — never edit an existing one).
 
@@ -90,11 +73,5 @@ Things that have actually cost time. Not derivable from the code.
 - `pnpm install`/`pnpm update` can fail with `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (stale `node_modules` vs. `.npmrc`'s `shamefully-hoist=true`) or hang waiting on a TTY prompt to remove `node_modules`. Run `CI=true pnpm install` to resolve non-interactively.
 - After bumping the `electron` devDependency, the first `pnpm test:e2e` run can time out on the first spec while Playwright downloads the new Electron binary mid-run. Re-run the suite once the binary is cached — this is not a real regression.
 - `better-sqlite3` is built for Electron, so its ABI does not match the Node that runs vitest. The DB-query layer cannot be unit-tested; only Playwright e2e exercises real SQLite. Rationale and the workaround (`repositories/settings-parsing.ts`) are in `docs/architecture.md`.
-- `DifficultyRule.det` buckets with strict `<`, `reference` with `<=`. They look symmetric and are not. The Excel formula must mirror this exactly.
-
-## Incidents
-
-| Date | What went wrong | Prevention |
-| :--- | :--- | :--- |
-| 2026-07-03 | `app-paths.test.ts` hardcoded the expected path as a POSIX literal (`/tmp/appdata/FP Studio`), which fails on Windows because `path.join` returns backslash-separated paths there | Build expected path values with `join()` (as the other tests in the same file already did) instead of hardcoding a separator style |
-| 2026-07-14 | Excel export difficulty formula used `<=` for DET buckets, diverging from `analyzeFunctionPoint`'s strict `<` at boundaries (58 divergent cases on Excel recalc, e.g. EI DET=5/16) | Guard the JS↔formula sync with exact-string assertions in `project-excel.test.ts`; remember DET uses `<`, reference uses `<=` |
+- `DifficultyRule.det` buckets with strict `<`, `reference` with `<=`. They look symmetric and are not. The Excel formula must mirror this exactly — the exact-string assertions in `src/src/main/export/project-excel.test.ts` guard it; keep them when touching either side.
+- Unit tests run on Windows in CI. Build expected file paths with `path.join()`, never a hardcoded `/`-separated literal (see `app-paths.test.ts`).
