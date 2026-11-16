@@ -2,9 +2,9 @@
 
 ## Key References
 
-- `docs/architecture.md` — **Read this every session.** Technology choices, layer structure, dependency direction, invariants, and the ADR log (append-only).
-- `docs/design.md` — Read when working on a specific feature. Module/class structure, processing flows, state transitions, per-feature test perspectives.
-- `docs/requirements.md` / `docs/specification.md` — Why the product exists and what it must do. Read when a change touches scope, screens, or the data model.
+- `docs/architecture.md` — **Read this every session.** Technology choices, responsibilities and dependency direction, invariants, persistence and migration, verification policy and key risks, and the ADR log (append-only).
+- `docs/requirements.md` / `docs/specification.md` — Why the product exists and what it must do. Read when a change touches scope, business rules, screens, state transitions, the data model, or input/output formats.
+- There is no detailed-design document (ADR-010). When you need the current module/class structure or call flow, read the code and explain it from there; do not add such snapshots to the docs.
 - `src/README.md` — Developer-facing build and test instructions.
 
 When a document and the code disagree, **the code is authoritative** — fix the document.
@@ -65,7 +65,7 @@ Releases are run by `.github/workflows/release.yml` on a `release-*` tag push. R
 
 - **Commit/push requires explicit user permission.**
 - Follow the TDD cycle enforced by the `test-as-tdd` skill. Conventions for layering, naming, error handling, and test naming are in `docs/architecture.md` (共通規約).
-- Keep the docs in sync when behavior changes: `docs/design.md` for module/flow changes, `docs/specification.md` for screens, data, or messages, `docs/architecture.md` for a new decision (append a new ADR — never edit an existing one).
+- Keep the docs in sync when behavior changes: `docs/specification.md` for business rules, screens, states, data, input/output, or messages; `docs/architecture.md` for responsibilities, constraints, persistence, verification policy, or a new decision (append a new ADR — never edit an existing one).
 
 ## Gotchas
 
