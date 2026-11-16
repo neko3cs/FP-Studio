@@ -7,7 +7,7 @@
 - There is no detailed-design document (ADR-010). When you need the current module/class structure or call flow, read the code and explain it from there; do not add such snapshots to the docs.
 - `src/README.md` — Developer-facing build and test instructions.
 
-When a document and the code disagree, **the code is authoritative** — fix the document.
+When a document and the code disagree, **the code is authoritative** — fix the document. Exception: if the difference is behavior that an open issue is tracking for implementation (design decided ahead of the code, e.g. #18), **the document is authoritative** — leave the document as is and implement from it.
 
 ## What This Project Is (and Is Not)
 
