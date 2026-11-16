@@ -3,6 +3,7 @@ import { useState } from 'react'
 import {
   analyzeFunctionPoint,
   getReferenceLabel,
+  type AnalyzeFunctionPointOptions,
   type FunctionEntry,
   type FunctionPointAnalysis,
   type FunctionType
@@ -37,7 +38,13 @@ const initialState: FunctionEntryFormState = {
   note: ''
 }
 
-export function useFunctionEntryForm(): UseFunctionEntryFormResult {
+/**
+ * rules には設定に保持された難易度ルールと重みを渡す。
+ * 保存時と同じ値でプレビューを算出し、入力中に見えた難易度・FP と登録後の値を一致させる。
+ */
+export function useFunctionEntryForm(
+  rules?: AnalyzeFunctionPointOptions
+): UseFunctionEntryFormResult {
   const [values, setValues] = useState<FunctionEntryFormState>(initialState)
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null)
   const [{ updateField, startEditing, cancelEditing, reset }] = useState(() => ({
@@ -74,7 +81,7 @@ export function useFunctionEntryForm(): UseFunctionEntryFormResult {
 
   if (Number.isInteger(parsedDet) && parsedDet >= 1) {
     if (Number.isInteger(parsedReferenceCount) && parsedReferenceCount >= 0) {
-      preview = analyzeFunctionPoint(values.functionType, parsedDet, parsedReferenceCount)
+      preview = analyzeFunctionPoint(values.functionType, parsedDet, parsedReferenceCount, rules)
     }
   }
 

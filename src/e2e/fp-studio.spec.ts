@@ -44,6 +44,17 @@ async function addFunctionEntry(
   await expect(page.getByTestId('function-entry-table-body').getByText(input.name)).toBeVisible()
 }
 
+async function openView(page: Page, view: 'projects' | 'settings'): Promise<void> {
+  const menuItem = page.getByTestId(`side-menu-${view}`)
+
+  // メニュー項目はサイドメニューを展開している間だけ表示される
+  if (!(await menuItem.isVisible())) {
+    await page.getByTestId('side-menu-toggle').click()
+  }
+
+  await menuItem.click()
+}
+
 test.describe('FP Studio business scenarios', () => {
   test('プロジェクト作成から FP 集計まで完了できる', async () => {
     const appDataRoot = await createAppDataRoot()
@@ -125,6 +136,95 @@ test.describe('FP Studio business scenarios', () => {
         await closeStudioApp(relaunched)
       }
     } finally {
+      await removeAppDataRoot(appDataRoot)
+    }
+  })
+
+  test('デフォルト生産性の変更は以後に新規作成するプロジェクトにだけ効く', async () => {
+    const appDataRoot = await createAppDataRoot()
+    const app = await launchStudioApp(appDataRoot)
+
+    try {
+      await createProject(app.page, '既存プロジェクト', '変更前に作成')
+      await addFunctionEntry(app.page, {
+        name: '受注登録',
+        functionType: 'EI',
+        det: '4',
+        referenceCount: '1',
+        note: ''
+      })
+      await expect(app.page.getByTestId('summary-estimated-effort')).toHaveText('3 人日')
+
+      await openView(app.page, 'settings')
+      await expect(app.page.getByTestId('default-productivity-input')).toHaveValue('1.00')
+
+      // 丸めると 0 になる値は保存されず、入力エラーがメッセージバーに出る
+      await app.page.getByTestId('default-productivity-input').fill('0.004')
+      await app.page.getByTestId('default-productivity-save-button').click()
+      await expect(app.page.getByTestId('app-error-message')).toContainText(
+        '生産性は0より大きい数値で入力してください。'
+      )
+
+      await app.page.getByTestId('default-productivity-input').fill('2.5')
+      await app.page.getByTestId('default-productivity-save-button').click()
+      await expect(app.page.getByTestId('default-productivity-input')).toHaveValue('2.50')
+      await expect(app.page.getByTestId('default-productivity-save-button')).toBeDisabled()
+
+      await openView(app.page, 'projects')
+      await expect(app.page.getByTestId('summary-estimated-effort')).toHaveText('3 人日')
+
+      await createProject(app.page, '新規プロジェクト', '変更後に作成')
+      await addFunctionEntry(app.page, {
+        name: '受注登録',
+        functionType: 'EI',
+        det: '4',
+        referenceCount: '1',
+        note: ''
+      })
+      await expect(app.page.getByTestId('summary-estimated-effort')).toHaveText('7.5 人日')
+      await closeStudioApp(app)
+
+      const relaunched = await launchStudioApp(appDataRoot)
+      try {
+        await openView(relaunched.page, 'settings')
+        await expect(relaunched.page.getByTestId('default-productivity-input')).toHaveValue('2.50')
+      } finally {
+        await closeStudioApp(relaunched)
+      }
+    } finally {
+      await removeAppDataRoot(appDataRoot)
+    }
+  })
+
+  test('プロジェクトを複製すると全機能が引き継がれる', async () => {
+    const appDataRoot = await createAppDataRoot()
+    const app = await launchStudioApp(appDataRoot)
+
+    try {
+      await createProject(app.page, '基幹刷新', '複製元')
+      await addFunctionEntry(app.page, {
+        name: '受注登録',
+        functionType: 'EI',
+        det: '12',
+        referenceCount: '2',
+        note: ''
+      })
+      await addFunctionEntry(app.page, {
+        name: '顧客マスタ',
+        functionType: 'ILF',
+        det: '30',
+        referenceCount: '3',
+        note: ''
+      })
+
+      await app.page.getByRole('button', { name: '基幹刷新 のオプション' }).click()
+      await app.page.getByRole('menuitem', { name: '基幹刷新 を複製' }).click()
+
+      await expect(app.page.getByTestId('summary-project-name')).toHaveText('基幹刷新 コピー')
+      await expect(app.page.getByTestId('summary-function-count')).toHaveText('2')
+      await expect(app.page.getByTestId('summary-total-ufp')).toHaveText('14')
+    } finally {
+      await closeStudioApp(app)
       await removeAppDataRoot(appDataRoot)
     }
   })

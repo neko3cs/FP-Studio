@@ -1,6 +1,8 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_WEIGHT_TABLE } from '@shared/fp'
+
 import { useFunctionEntryForm } from './useFunctionEntryForm'
 
 describe('useFunctionEntryForm', () => {
@@ -31,6 +33,22 @@ describe('useFunctionEntryForm', () => {
       functionPoints: 10
     })
     expect(result.current.canSubmit).toBe(true)
+  })
+
+  // specification.md「機能の登録・編集・削除」: プレビューも保存時も設定の難易度ルールと重みで算出する
+  it('設定に保持された難易度ルールと重みでプレビューを算出する', () => {
+    const { result } = renderHook(() =>
+      useFunctionEntryForm({
+        difficultyRules: [{ functionType: 'EI', det: [2, 3], reference: [0, 0] }],
+        weightTable: { ...DEFAULT_WEIGHT_TABLE, EI: { Low: 30, Average: 40, High: 60 } }
+      })
+    )
+
+    // 初期値 EI・DET=4・FTR=1 は、標準値なら Low / 3
+    expect(result.current.preview).toEqual({
+      difficulty: 'High',
+      functionPoints: 60
+    })
   })
 
   it('不正な数値入力ではプレビューを返さない', () => {

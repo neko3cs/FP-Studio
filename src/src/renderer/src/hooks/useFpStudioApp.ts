@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { DEFAULT_STUDIO_SETTINGS } from '@shared/fp'
-import type {
-  FunctionEntry,
-  ProjectDetail,
-  ProjectSummary,
-  StudioSettings,
-  UpdateSettingsInput
-} from '@shared/fp'
+import type { FunctionEntry, ProjectDetail, ProjectSummary, StudioSettings } from '@shared/fp'
 import type { UpdateState } from '@shared/ipc'
 
 import { useFunctionEntryForm } from './useFunctionEntryForm'
@@ -21,6 +15,7 @@ interface UseFpStudioAppResult {
   projectForm: ReturnType<typeof useProjectForm>
   entryForm: ReturnType<typeof useFunctionEntryForm>
   projectProductivityForm: ReturnType<typeof useProjectProductivityForm>
+  defaultProductivityForm: ReturnType<typeof useProjectProductivityForm>
   studioSettings: StudioSettings
   isLoading: boolean
   isBusy: boolean
@@ -42,7 +37,7 @@ interface UseFpStudioAppResult {
     deleteFunctionEntry: (entryId: string) => void
     updateProjectProductivity: () => void
     exportProjectToExcel: (projectId: string) => void
-    updateSettings: (input: UpdateSettingsInput) => void
+    updateDefaultProductivity: () => void
   }
 }
 
@@ -55,11 +50,18 @@ function getErrorMessage(error: unknown): string {
 }
 
 export function useFpStudioApp(): UseFpStudioAppResult {
+  const [studioSettings, setStudioSettings] = useState<StudioSettings>(DEFAULT_STUDIO_SETTINGS)
   const projectForm = useProjectForm()
-  const entryForm = useFunctionEntryForm()
+  const entryForm = useFunctionEntryForm(studioSettings)
   const projectProductivityForm = useProjectProductivityForm(1)
   const { productivity: projectProductivityValue, reset: resetProjectProductivity } =
     projectProductivityForm
+  // デフォルト生産性の入力も、プロジェクトの生産性と同じ規則（現在値から変化したときだけ保存できる）に従う
+  const defaultProductivityForm = useProjectProductivityForm(
+    DEFAULT_STUDIO_SETTINGS.defaultProductivity
+  )
+  const { productivity: defaultProductivityValue, reset: resetDefaultProductivity } =
+    defaultProductivityForm
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [selectedProject, setSelectedProject] = useState<ProjectDetail | null>(null)
@@ -70,7 +72,6 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     status: 'idle',
     message: 'アップデート状態を確認しています…'
   })
-  const [studioSettings, setStudioSettings] = useState<StudioSettings>(DEFAULT_STUDIO_SETTINGS)
 
   const loadProjectDetail = useCallback(
     async (projectId: string | null) => {
@@ -108,7 +109,8 @@ export function useFpStudioApp(): UseFpStudioAppResult {
   const loadSettings = useCallback(async () => {
     const nextSettings = await window.fpStudio.getSettings()
     setStudioSettings(nextSettings)
-  }, [])
+    resetDefaultProductivity(nextSettings.defaultProductivity)
+  }, [resetDefaultProductivity])
 
   const initialize = useCallback(async () => {
     try {
@@ -161,15 +163,15 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     }
   }, [])
 
-  const updateSettings = useCallback(
-    (input: UpdateSettingsInput) => {
-      void runAction(async () => {
-        const nextSettings = await window.fpStudio.updateSettings(input)
-        setStudioSettings(nextSettings)
+  const updateDefaultProductivity = useCallback(() => {
+    void runAction(async () => {
+      const nextSettings = await window.fpStudio.updateSettings({
+        defaultProductivity: Number(defaultProductivityValue)
       })
-    },
-    [runAction]
-  )
+      setStudioSettings(nextSettings)
+      resetDefaultProductivity(nextSettings.defaultProductivity)
+    })
+  }, [defaultProductivityValue, resetDefaultProductivity, runAction])
 
   const createProject = useCallback(() => {
     void runAction(async () => {
@@ -335,6 +337,7 @@ export function useFpStudioApp(): UseFpStudioAppResult {
     projectForm,
     entryForm,
     projectProductivityForm,
+    defaultProductivityForm,
     studioSettings,
     isLoading,
     isBusy,
@@ -356,7 +359,7 @@ export function useFpStudioApp(): UseFpStudioAppResult {
       cancelEditingFunctionEntry,
       deleteFunctionEntry,
       updateProjectProductivity,
-      updateSettings
+      updateDefaultProductivity
     }
   }
 }

@@ -31,6 +31,8 @@ export default defineConfig({
         'src/renderer/src/RendererErrorBoundary.tsx',
         'src/renderer/src/components/FunctionEntryForm.tsx',
         'src/renderer/src/components/ProjectSummaryCards.tsx',
+        'src/renderer/src/components/SettingsPanel.tsx',
+        'src/renderer/src/components/UpdateStatusCard.tsx',
         'src/renderer/src/hooks/useFunctionEntryForm.ts',
         'src/renderer/src/hooks/useProjectForm.ts',
         'src/renderer/src/hooks/useProjectProductivityForm.ts'

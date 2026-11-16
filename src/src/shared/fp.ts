@@ -124,42 +124,66 @@ export const DEFAULT_DIFFICULTY_RULES: readonly DifficultyRule[] = [
 
 export const DIFFICULTY_RULES = DEFAULT_DIFFICULTY_RULES
 
-function buildDifficultyRulesByType(
-  rules: readonly DifficultyRule[]
-): Record<FunctionType, DifficultyRule> {
-  return rules.reduce<Record<FunctionType, DifficultyRule>>(
-    (acc, rule) => {
-      acc[rule.functionType] = rule
-      return acc
-    },
-    {} as Record<FunctionType, DifficultyRule>
-  )
+function isFiniteNumber(value: unknown): value is number {
+  return Number.isFinite(value)
 }
 
-const DEFAULT_DIFFICULTY_RULES_BY_TYPE = buildDifficultyRulesByType(DEFAULT_DIFFICULTY_RULES)
+function isBounds(value: unknown): value is readonly [number, number] {
+  return Array.isArray(value) && value.length === 2 && value.every(isFiniteNumber)
+}
 
-function resolveDifficultyRules(
-  rules?: readonly DifficultyRule[]
-): Record<FunctionType, DifficultyRule> {
-  if (!rules) {
-    return DEFAULT_DIFFICULTY_RULES_BY_TYPE
+function isDifficultyRule(value: unknown): value is DifficultyRule {
+  if (typeof value !== 'object' || value === null) {
+    return false
   }
 
-  const provided = buildDifficultyRulesByType(rules)
+  const rule = value as Partial<DifficultyRule>
 
-  return FUNCTION_TYPES.reduce<Record<FunctionType, DifficultyRule>>(
-    (acc, type) => {
-      acc[type] = provided[type] ?? DEFAULT_DIFFICULTY_RULES_BY_TYPE[type]
-      return acc
-    },
-    {} as Record<FunctionType, DifficultyRule>
+  return (
+    FUNCTION_TYPES.includes(rule.functionType as FunctionType) &&
+    isBounds(rule.det) &&
+    isBounds(rule.reference)
   )
 }
 
-function resolveWeightTable(table?: WeightTable): WeightTable {
+/**
+ * 算出に使う難易度ルールを、Function Type の順に5件そろえて返す。
+ * 一覧でない場合は全体を、欠けている・形が正しくない Function Type はその分だけ IFPUG 標準値にする。
+ * 設定は DB から読んだ値で型の保証が無いため、unknown として受ける。
+ */
+export function resolveDifficultyRules(rules?: unknown): readonly DifficultyRule[] {
+  if (!Array.isArray(rules)) {
+    return DEFAULT_DIFFICULTY_RULES
+  }
+
+  const provided = new Map<FunctionType, DifficultyRule>()
+
+  for (const rule of rules) {
+    if (isDifficultyRule(rule)) {
+      provided.set(rule.functionType, rule)
+    }
+  }
+
+  return DEFAULT_DIFFICULTY_RULES.map((defaultRule) => {
+    const rule = provided.get(defaultRule.functionType)
+
+    return rule
+      ? { functionType: rule.functionType, det: rule.det, reference: rule.reference }
+      : defaultRule
+  })
+}
+
+/**
+ * 算出に使う重みを、全 Function Type × 全難易度そろえて返す。
+ * 欠けている・数値でない項目はその項目だけ IFPUG 標準値にする。
+ */
+export function resolveWeightTable(table?: unknown): WeightTable {
+  const candidateTable = table as Partial<Record<FunctionType, unknown>> | null | undefined
+
   return FUNCTION_TYPES.reduce<WeightTable>((acc, type) => {
     const defaultRow = DEFAULT_WEIGHT_TABLE[type]
-    const customRow = table?.[type]
+    const customRow = candidateTable?.[type] as
+      Partial<Record<ComplexityLevel, unknown>> | null | undefined
 
     acc[type] = COMPLEXITY_LEVELS.reduce<Record<ComplexityLevel, number>>(
       (rowAcc, level) => {
@@ -172,10 +196,6 @@ function resolveWeightTable(table?: WeightTable): WeightTable {
 
     return acc
   }, {} as WeightTable)
-}
-
-function isFiniteNumber(value: unknown): value is number {
-  return Number.isFinite(value)
 }
 
 export const DIFFICULTY_MATRIX: Record<FunctionType, readonly (readonly ComplexityLevel[])[]> = {
@@ -257,9 +277,10 @@ export function analyzeFunctionPoint(
   referenceCount: number,
   options?: AnalyzeFunctionPointOptions
 ): FunctionPointAnalysis {
-  const difficultyRulesByType = resolveDifficultyRules(options?.difficultyRules)
   const weightTable = resolveWeightTable(options?.weightTable)
-  const rule = difficultyRulesByType[functionType]
+  const rule = resolveDifficultyRules(options?.difficultyRules)[
+    FUNCTION_TYPES.indexOf(functionType)
+  ]
 
   const detBucket = getDetBucket(rule.det, det)
   const referenceBucket = getReferenceBucket(rule.reference, referenceCount)

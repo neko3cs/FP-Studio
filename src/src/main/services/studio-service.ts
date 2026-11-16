@@ -54,6 +54,17 @@ function isFiniteNumber(value: unknown): value is number {
   return Number.isFinite(value)
 }
 
+// 検証は丸めた後の値に対して行う。0.004 のように丸めると 0 になる値を保存させないため。
+function requireProductivity(value: number): number {
+  const rounded = Math.round((value + Number.EPSILON) * 100) / 100
+
+  if (!Number.isFinite(rounded) || rounded <= 0) {
+    throw new Error('生産性は0より大きい数値で入力してください。')
+  }
+
+  return rounded
+}
+
 function resolveProductivity(productivity: number | undefined, fallback: number): number {
   return isFiniteNumber(productivity) ? productivity : fallback
 }
@@ -144,17 +155,19 @@ export function createStudioService(repository: StudioRepository): StudioService
         productivity: source.productivity ?? settings.defaultProductivity
       }
 
-      repository.createProject(newProject)
+      repository.transaction(() => {
+        repository.createProject(newProject)
 
-      for (const entry of sourceEntries) {
-        repository.createFunctionEntry({
-          ...entry,
-          id: crypto.randomUUID(),
-          projectId: newProject.id,
-          createdAt: now,
-          updatedAt: now
-        })
-      }
+        for (const entry of sourceEntries) {
+          repository.createFunctionEntry({
+            ...entry,
+            id: crypto.randomUUID(),
+            projectId: newProject.id,
+            createdAt: now,
+            updatedAt: now
+          })
+        }
+      })
 
       return toProjectDetail(newProject, repository.listFunctionEntries(newProject.id), settings)
     },
@@ -214,8 +227,10 @@ export function createStudioService(repository: StudioRepository): StudioService
         updatedAt: now
       }
 
-      repository.createFunctionEntry(entry)
-      repository.updateProjectTimestamp(project.id, now)
+      repository.transaction(() => {
+        repository.createFunctionEntry(entry)
+        repository.updateProjectTimestamp(project.id, now)
+      })
 
       return toProjectDetail(
         { ...project, updatedAt: now },
@@ -246,8 +261,7 @@ export function createStudioService(repository: StudioRepository): StudioService
         weightTable: settings.weightTable
       })
       const updatedAt = new Date().toISOString()
-
-      repository.updateFunctionEntry({
+      const updatedEntry: FunctionEntry = {
         ...currentEntry,
         name: requireNonEmptyText(input.name, '機能名'),
         functionType: input.functionType,
@@ -257,8 +271,12 @@ export function createStudioService(repository: StudioRepository): StudioService
         functionPoints: analysis.functionPoints,
         note: input.note.trim(),
         updatedAt
+      }
+
+      repository.transaction(() => {
+        repository.updateFunctionEntry(updatedEntry)
+        repository.updateProjectTimestamp(project.id, updatedAt)
       })
-      repository.updateProjectTimestamp(project.id, updatedAt)
 
       return toProjectDetail(
         { ...project, updatedAt },
@@ -281,9 +299,12 @@ export function createStudioService(repository: StudioRepository): StudioService
         throw new Error('削除対象の機能が見つかりません。')
       }
 
-      repository.deleteFunctionEntry(input.entryId)
       const updatedAt = new Date().toISOString()
-      repository.updateProjectTimestamp(project.id, updatedAt)
+
+      repository.transaction(() => {
+        repository.deleteFunctionEntry(input.entryId)
+        repository.updateProjectTimestamp(project.id, updatedAt)
+      })
 
       const settings = repository.getSettings()
 
@@ -300,11 +321,7 @@ export function createStudioService(repository: StudioRepository): StudioService
         throw new Error('対象プロジェクトが見つかりません。')
       }
 
-      if (!Number.isFinite(input.productivity) || input.productivity <= 0) {
-        throw new Error('生産性は0より大きい数値で入力してください。')
-      }
-
-      const normalizedProductivity = Number(input.productivity.toFixed(2))
+      const normalizedProductivity = requireProductivity(input.productivity)
       const updatedAt = new Date().toISOString()
 
       repository.setProjectProductivity(project.id, normalizedProductivity, updatedAt)
@@ -323,11 +340,7 @@ export function createStudioService(repository: StudioRepository): StudioService
     getSettings: () => repository.getSettings(),
     updateSettings: (input) => {
       if (input.defaultProductivity !== undefined) {
-        if (!Number.isFinite(input.defaultProductivity) || input.defaultProductivity <= 0) {
-          throw new Error('生産性は0より大きい数値で入力してください。')
-        }
-
-        repository.setDefaultProductivity(Number(input.defaultProductivity.toFixed(2)))
+        repository.setDefaultProductivity(requireProductivity(input.defaultProductivity))
       }
 
       return repository.getSettings()
