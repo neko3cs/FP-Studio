@@ -1,5 +1,5 @@
-import type { DifficultyRule, StudioSettings, WeightTable } from '@shared/fp'
-import { DEFAULT_STUDIO_SETTINGS } from '@shared/fp'
+import type { StudioSettings } from '@shared/fp'
+import { DEFAULT_STUDIO_SETTINGS, resolveDifficultyRules, resolveWeightTable } from '@shared/fp'
 
 /**
  * settings テーブルの生の値を解析して StudioSettings を組み立てる純粋ロジック。
@@ -15,11 +15,11 @@ function parseNumberSetting(value: string | undefined, fallback: number): number
   return Number.isFinite(parsed) ? parsed : fallback
 }
 
-function parseJsonSetting<T>(value: string | undefined, fallback: T): T {
+function parseJsonSetting(value: string | undefined): unknown {
   try {
-    return JSON.parse(value as string) as T
+    return JSON.parse(value as string)
   } catch {
-    return fallback
+    return undefined
   }
 }
 
@@ -31,22 +31,14 @@ export function buildStudioSettings(
     return acc
   }, {})
 
-  const difficultyRules = parseJsonSetting<readonly DifficultyRule[]>(
-    map['difficultyRules'],
-    DEFAULT_STUDIO_SETTINGS.difficultyRules
-  )
-
-  const weightTable = parseJsonSetting<WeightTable>(
-    map['weightTable'],
-    DEFAULT_STUDIO_SETTINGS.weightTable
-  )
-
   return {
     defaultProductivity: parseNumberSetting(
       map['defaultProductivity'],
       DEFAULT_STUDIO_SETTINGS.defaultProductivity
     ),
-    difficultyRules,
-    weightTable
+    // JSON として読めても型が違うことがある。形の検証と標準値での補完は shared/fp.ts に任せ、
+    // アプリが算出に使う値と同じものを設定として返す。
+    difficultyRules: resolveDifficultyRules(parseJsonSetting(map['difficultyRules'])),
+    weightTable: resolveWeightTable(parseJsonSetting(map['weightTable']))
   }
 }

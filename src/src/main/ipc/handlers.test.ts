@@ -197,7 +197,6 @@ describe('createStudioIpcHandlers', () => {
 
       await handlers.exportProjectToExcel({ projectId: projectSummary.id })
 
-      expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
       expect(mockedShowSaveDialog).toHaveBeenCalledWith({
         defaultPath: '出力ファイル.xlsx',
         filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }],
@@ -263,7 +262,7 @@ describe('createStudioIpcHandlers', () => {
         createFunctionEntry: vi.fn(),
         updateFunctionEntry: vi.fn(),
         deleteFunctionEntry: vi.fn(),
-        getSettings: vi.fn(),
+        getSettings: vi.fn(() => settings),
         updateSettings: vi.fn(),
         updateProjectProductivity: vi.fn()
       }
@@ -272,7 +271,8 @@ describe('createStudioIpcHandlers', () => {
 
       await handlers.exportProjectToExcel({ projectId: projectSummary.id })
 
-      expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail)
+      // 同梱する難易度ルールと重みに設定の値を使うため、設定も渡す
+      expect(mockedBuildProjectWorkbook).toHaveBeenCalledWith(projectDetail, settings)
       expect(mockedShowSaveDialog).toHaveBeenCalledWith(dummyWindow, {
         defaultPath: '出力ファイル.xlsx',
         filters: [{ name: 'Excel Workbook', extensions: ['xlsx'] }],

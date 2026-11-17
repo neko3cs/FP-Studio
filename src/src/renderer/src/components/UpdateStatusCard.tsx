@@ -52,7 +52,8 @@ function UpdateStatusCard({
 }: UpdateStatusCardProps): React.JSX.Element {
   const styles = useStyles()
   const progressPercent = state.progress?.percent ?? 0
-  const canCheck = state.status !== 'checking' && state.status !== 'downloading'
+  // 再確認できるのは失敗したときだけ。確認はアプリの起動時に自動で始まる。
+  const canCheck = state.status === 'error'
   const canInstall = state.status === 'ready'
 
   return (

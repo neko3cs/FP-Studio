@@ -1,8 +1,11 @@
 import {
   Body1Strong,
   Body2,
+  Button,
   Card,
   Caption1,
+  Field,
+  Input,
   makeStyles,
   Table,
   TableBody,
@@ -21,6 +24,11 @@ import {
 
 interface SettingsPanelProps {
   settings: StudioSettings
+  defaultProductivity: string
+  canSubmitDefaultProductivity: boolean
+  isBusy: boolean
+  onDefaultProductivityChange: (value: string) => void
+  onSubmitDefaultProductivity: () => void
 }
 
 const useStyles = makeStyles({
@@ -51,6 +59,15 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusMedium,
     backgroundColor: tokens.colorNeutralBackground2
   },
+  productivityRow: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    gap: tokens.spacingHorizontalM,
+    flexWrap: 'wrap'
+  },
+  productivityField: {
+    minWidth: '240px'
+  },
   tableWrapper: {
     overflowX: 'auto'
   },
@@ -59,15 +76,50 @@ const useStyles = makeStyles({
   }
 })
 
-export function SettingsPanel({ settings }: SettingsPanelProps): React.JSX.Element {
+export function SettingsPanel({
+  settings,
+  defaultProductivity,
+  canSubmitDefaultProductivity,
+  isBusy,
+  onDefaultProductivityChange,
+  onSubmitDefaultProductivity
+}: SettingsPanelProps): React.JSX.Element {
   const styles = useStyles()
 
   return (
     <Card appearance="filled-alternative" className={styles.panel}>
       <div className={styles.header}>
         <Body1Strong>設定</Body1Strong>
-        <Body2>IFPUG の難易度ルールと重みの参照値です。</Body2>
+        <Body2>デフォルト生産性の設定と、IFPUG の難易度ルールと重みの参照値です。</Body2>
       </div>
+
+      <section className={styles.section}>
+        <div>
+          <Body1Strong>デフォルト生産性</Body1Strong>
+          <Caption1>
+            以後に新規作成するプロジェクトの生産性になります。既存のプロジェクトは変わりません。
+          </Caption1>
+        </div>
+        <div className={styles.productivityRow}>
+          <Field className={styles.productivityField} label="デフォルト生産性 (人日 / FP)">
+            <Input
+              data-testid="default-productivity-input"
+              disabled={isBusy}
+              inputMode="decimal"
+              value={defaultProductivity}
+              onChange={(_, data) => onDefaultProductivityChange(data.value)}
+            />
+          </Field>
+          <Button
+            appearance="secondary"
+            data-testid="default-productivity-save-button"
+            disabled={isBusy || !canSubmitDefaultProductivity}
+            onClick={onSubmitDefaultProductivity}
+          >
+            値を更新
+          </Button>
+        </div>
+      </section>
 
       <section className={styles.section}>
         <div>

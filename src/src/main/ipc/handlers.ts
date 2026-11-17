@@ -56,7 +56,7 @@ export function createStudioIpcHandlers(service: StudioService): StudioIpcHandle
         throw new Error('対象のプロジェクトが見つかりません。')
       }
 
-      const workbook = buildProjectWorkbook(project)
+      const workbook = buildProjectWorkbook(project, service.getSettings())
       const defaultFilename = buildDefaultExportFileName(project.name)
       const parentWindow = BrowserWindow.getFocusedWindow()
       const saveDialogOptions = {

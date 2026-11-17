@@ -19,8 +19,45 @@ function createRepositoryMock(): Mocked<StudioRepository> {
     getSettings: vi.fn<StudioRepository['getSettings']>(),
     setDefaultProductivity: vi.fn<StudioRepository['setDefaultProductivity']>(),
     setProjectProductivity: vi.fn<StudioRepository['setProjectProductivity']>(),
+    transaction: vi.fn(<T>(work: () => T): T => work()) as Mocked<StudioRepository>['transaction'],
     close: vi.fn<StudioRepository['close']>()
   }
+}
+
+const WRITE_METHODS = [
+  'createProject',
+  'updateProjectTimestamp',
+  'renameProject',
+  'setProjectProductivity',
+  'deleteProject',
+  'createFunctionEntry',
+  'updateFunctionEntry',
+  'deleteFunctionEntry'
+] as const
+
+/** トランザクションの外で呼ばれた書き込みの名前を記録する。 */
+function trackWritesOutsideTransaction(repository: Mocked<StudioRepository>): string[] {
+  const writesOutside: string[] = []
+  let depth = 0
+
+  repository.transaction.mockImplementation((work) => {
+    depth += 1
+    try {
+      return work()
+    } finally {
+      depth -= 1
+    }
+  })
+
+  for (const method of WRITE_METHODS) {
+    repository[method].mockImplementation(() => {
+      if (depth === 0) {
+        writesOutside.push(method)
+      }
+    })
+  }
+
+  return writesOutside
 }
 
 function createTestSettings(overrides: Partial<StudioSettings> = {}): StudioSettings {
@@ -356,6 +393,26 @@ describe('StudioService', () => {
         )
         expect(result.entries).toHaveLength(1)
         expect(result.entries[0].name).toBe('顧客登録')
+      })
+
+      // specification.md「プロジェクトの複製と削除」: 複製元の生産性が未設定
+      it('複製元の生産性が未設定ならデフォルト生産性を複製先の生産性にする', () => {
+        const repository = createRepositoryMock()
+        repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 2.5 }))
+        repository.getProject.mockReturnValue({
+          id: 'project-1',
+          name: '案件A',
+          description: '',
+          createdAt: '2025-12-31T00:00:00.000Z',
+          updatedAt: '2025-12-31T00:00:00.000Z'
+        } as ReturnType<StudioRepository['getProject']>)
+        repository.listFunctionEntries.mockReturnValue([])
+
+        createStudioService(repository).duplicateProject({ projectId: 'project-1' })
+
+        expect(repository.createProject).toHaveBeenCalledWith(
+          expect.objectContaining({ productivity: 2.5 })
+        )
       })
 
       it('存在しないプロジェクトは複製できない', () => {
@@ -1271,6 +1328,98 @@ describe('StudioService', () => {
     })
   })
 
+  // architecture.md「トランザクションと整合性」: 1つの操作に伴う書き込みは1つのトランザクションにまとめる
+  describe('1つの操作の書き込みを1つのトランザクションにまとめる', () => {
+    const project = {
+      id: 'project-1',
+      name: '案件A',
+      description: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z',
+      productivity: 1
+    }
+    const entry = {
+      id: 'entry-1',
+      projectId: 'project-1',
+      name: '顧客登録',
+      functionType: 'EI' as const,
+      det: 5,
+      referenceCount: 2,
+      difficulty: 'Average' as const,
+      functionPoints: 4,
+      note: '',
+      createdAt: '2025-12-31T00:00:00.000Z',
+      updatedAt: '2025-12-31T00:00:00.000Z'
+    }
+    const entryInput = {
+      projectId: 'project-1',
+      name: '顧客登録',
+      functionType: 'EI' as const,
+      det: 5,
+      referenceCount: 2,
+      note: ''
+    }
+
+    function createRepositoryWithProject(): Mocked<StudioRepository> {
+      const repository = createRepositoryMock()
+      repository.getProject.mockReturnValue(project)
+      repository.listFunctionEntries.mockReturnValue([entry])
+      repository.getSettings.mockReturnValue(createTestSettings())
+      return repository
+    }
+
+    it('複製は、プロジェクトの作成と全機能の作成を1つのトランザクションの中で行う', () => {
+      const repository = createRepositoryWithProject()
+      const writesOutside = trackWritesOutsideTransaction(repository)
+
+      createStudioService(repository).duplicateProject({ projectId: 'project-1' })
+
+      expect(repository.createProject).toHaveBeenCalledTimes(1)
+      expect(repository.createFunctionEntry).toHaveBeenCalledTimes(1)
+      expect(repository.transaction).toHaveBeenCalledTimes(1)
+      expect(writesOutside).toEqual([])
+    })
+
+    it('機能の追加は、機能の作成とプロジェクト更新日時の更新を1つのトランザクションの中で行う', () => {
+      const repository = createRepositoryWithProject()
+      const writesOutside = trackWritesOutsideTransaction(repository)
+
+      createStudioService(repository).createFunctionEntry(entryInput)
+
+      expect(repository.createFunctionEntry).toHaveBeenCalledTimes(1)
+      expect(repository.updateProjectTimestamp).toHaveBeenCalledTimes(1)
+      expect(repository.transaction).toHaveBeenCalledTimes(1)
+      expect(writesOutside).toEqual([])
+    })
+
+    it('機能の編集は、機能の更新とプロジェクト更新日時の更新を1つのトランザクションの中で行う', () => {
+      const repository = createRepositoryWithProject()
+      const writesOutside = trackWritesOutsideTransaction(repository)
+
+      createStudioService(repository).updateFunctionEntry({ ...entryInput, entryId: 'entry-1' })
+
+      expect(repository.updateFunctionEntry).toHaveBeenCalledTimes(1)
+      expect(repository.updateProjectTimestamp).toHaveBeenCalledTimes(1)
+      expect(repository.transaction).toHaveBeenCalledTimes(1)
+      expect(writesOutside).toEqual([])
+    })
+
+    it('機能の削除は、機能の削除とプロジェクト更新日時の更新を1つのトランザクションの中で行う', () => {
+      const repository = createRepositoryWithProject()
+      const writesOutside = trackWritesOutsideTransaction(repository)
+
+      createStudioService(repository).deleteFunctionEntry({
+        projectId: 'project-1',
+        entryId: 'entry-1'
+      })
+
+      expect(repository.deleteFunctionEntry).toHaveBeenCalledTimes(1)
+      expect(repository.updateProjectTimestamp).toHaveBeenCalledTimes(1)
+      expect(repository.transaction).toHaveBeenCalledTimes(1)
+      expect(writesOutside).toEqual([])
+    })
+  })
+
   describe('生産性設定管理', () => {
     describe('プロジェクト生産性', () => {
       it('小数第2位に丸めて更新できる', () => {
@@ -1335,6 +1484,54 @@ describe('StudioService', () => {
           service.updateProjectProductivity({ projectId: 'project-1', productivity: 0 })
         ).toThrow('生産性は0より大きい数値で入力してください。')
       })
+
+      // specification.md「入力の検証」の生産性の行
+      it('丸めると0になる値（0.004）は保存せず入力エラーにする', () => {
+        const repository = createRepositoryMock()
+        repository.getProject.mockReturnValue({
+          id: 'project-1',
+          name: '案件A',
+          description: '',
+          createdAt: '2025-12-31T00:00:00.000Z',
+          updatedAt: '2025-12-31T00:00:00.000Z',
+          productivity: 1
+        })
+
+        const service = createStudioService(repository)
+
+        expect(() =>
+          service.updateProjectProductivity({ projectId: 'project-1', productivity: 0.004 })
+        ).toThrow('生産性は0より大きい数値で入力してください。')
+        expect(repository.setProjectProductivity).not.toHaveBeenCalled()
+      })
+
+      it.each([
+        [0.005, 0.01],
+        [0.006, 0.01],
+        [1.005, 1.01]
+      ])('小数第3位を四捨五入して保存する（%s → %s）', (input, expected) => {
+        const repository = createRepositoryMock()
+        repository.getProject.mockReturnValue({
+          id: 'project-1',
+          name: '案件A',
+          description: '',
+          createdAt: '2025-12-31T00:00:00.000Z',
+          updatedAt: '2025-12-31T00:00:00.000Z',
+          productivity: 1
+        })
+        repository.listFunctionEntries.mockReturnValue([])
+        repository.getSettings.mockReturnValue(createTestSettings())
+
+        const service = createStudioService(repository)
+
+        service.updateProjectProductivity({ projectId: 'project-1', productivity: input })
+
+        expect(repository.setProjectProductivity).toHaveBeenCalledWith(
+          'project-1',
+          expected,
+          '2026-01-01T00:00:00.000Z'
+        )
+      })
     })
 
     describe('デフォルト生産性', () => {
@@ -1350,6 +1547,16 @@ describe('StudioService', () => {
         expect(repository.setDefaultProductivity).toHaveBeenCalledWith(1.23)
       })
 
+      it('デフォルト生産性の指定が無いときは何も保存せず現在の設定を返す', () => {
+        const repository = createRepositoryMock()
+        repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 1.5 }))
+
+        const settings = createStudioService(repository).updateSettings({})
+
+        expect(repository.setDefaultProductivity).not.toHaveBeenCalled()
+        expect(settings.defaultProductivity).toBe(1.5)
+      })
+
       it('0やNaNは設定できない', () => {
         const service = createStudioService(createRepositoryMock())
 
@@ -1359,6 +1566,26 @@ describe('StudioService', () => {
         expect(() => service.updateSettings({ defaultProductivity: Number.NaN })).toThrow(
           '生産性は0より大きい数値で入力してください。'
         )
+      })
+
+      it('丸めると0になる値（0.004）は保存せず入力エラーにする', () => {
+        const repository = createRepositoryMock()
+        const service = createStudioService(repository)
+
+        expect(() => service.updateSettings({ defaultProductivity: 0.004 })).toThrow(
+          '生産性は0より大きい数値で入力してください。'
+        )
+        expect(repository.setDefaultProductivity).not.toHaveBeenCalled()
+      })
+
+      it('小数第3位を四捨五入して保存する（0.005 → 0.01）', () => {
+        const repository = createRepositoryMock()
+        repository.getSettings.mockReturnValue(createTestSettings({ defaultProductivity: 0.01 }))
+        const service = createStudioService(repository)
+
+        service.updateSettings({ defaultProductivity: 0.005 })
+
+        expect(repository.setDefaultProductivity).toHaveBeenCalledWith(0.01)
       })
     })
   })
