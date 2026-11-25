@@ -1,7 +1,12 @@
 import ExcelJS from 'exceljs'
 
-import type { ProjectDetail } from '@shared/fp'
-import { COMPLEXITY_LEVELS, DIFFICULTY_RULES, FUNCTION_TYPES, WEIGHT_TABLE } from '@shared/fp'
+import type { AnalyzeFunctionPointOptions, ProjectDetail } from '@shared/fp'
+import {
+  COMPLEXITY_LEVELS,
+  FUNCTION_TYPES,
+  resolveDifficultyRules,
+  resolveWeightTable
+} from '@shared/fp'
 
 const SUMMARY_SHEET_NAME = 'Summary'
 const ENTRIES_SHEET_NAME = 'Function Entries'
@@ -15,7 +20,7 @@ function quoteSheet(name: string): string {
 const ENTRIES_FP_RANGE = `${quoteSheet(ENTRIES_SHEET_NAME)}!H2:H1048576`
 const WEIGHTS_START_ROW = 2
 const DIFFICULTY_RULES_START_ROW = 2
-const DIFFICULTY_RULES_END_ROW = DIFFICULTY_RULES_START_ROW + DIFFICULTY_RULES.length - 1
+const DIFFICULTY_RULES_END_ROW = DIFFICULTY_RULES_START_ROW + FUNCTION_TYPES.length - 1
 
 function getWeightFormula(rowNumber: number): string {
   const weightsEndRow = WEIGHTS_START_ROW + FUNCTION_TYPES.length - 1
@@ -70,7 +75,17 @@ export function buildDefaultExportFileName(projectName: string): string {
   return `${safeName}-${date}.xlsx`
 }
 
-export function buildProjectWorkbook(project: ProjectDetail): ExcelJS.Workbook {
+/**
+ * rules には設定に保持された難易度ルールと重みを渡す。
+ * 同梱する表は、欠けた項目を IFPUG 標準値で補った後の値（アプリが算出に使う値と同じもの）にする。
+ */
+export function buildProjectWorkbook(
+  project: ProjectDetail,
+  rules: AnalyzeFunctionPointOptions = {}
+): ExcelJS.Workbook {
+  const weightTable = resolveWeightTable(rules.weightTable)
+  const difficultyRules = resolveDifficultyRules(rules.difficultyRules)
+
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'FP Studio'
   workbook.created = new Date()
@@ -107,7 +122,9 @@ export function buildProjectWorkbook(project: ProjectDetail): ExcelJS.Workbook {
     { header: '重み', key: 'weight', width: 10 },
     { header: 'FP', key: 'functionPoints', width: 10 },
     { header: '生産性（人日/FP）', key: 'productivity', width: 20 },
-    { header: '工数（人日）', key: 'effort', width: 16 }
+    { header: '工数（人日）', key: 'effort', width: 16 },
+    // 備考は末尾に置く。既存の列を動かすと数式の参照先が変わるため。
+    { header: '備考', key: 'note', width: 40 }
   ]
   entriesSheet.getRow(1).font = { bold: true }
 
@@ -117,11 +134,12 @@ export function buildProjectWorkbook(project: ProjectDetail): ExcelJS.Workbook {
       name: entry.name,
       functionType: entry.functionType,
       det: entry.det,
-      referenceCount: entry.referenceCount
+      referenceCount: entry.referenceCount,
+      note: entry.note
     })
     const rowNumber = row.number
 
-    const weightResult = WEIGHT_TABLE[entry.functionType][entry.difficulty]
+    const weightResult = weightTable[entry.functionType][entry.difficulty]
     const productivityResult = project.productivity
     const effortResult = Number((entry.functionPoints * productivityResult).toFixed(2))
 
@@ -155,7 +173,7 @@ export function buildProjectWorkbook(project: ProjectDetail): ExcelJS.Workbook {
   FUNCTION_TYPES.forEach((functionType) => {
     weightsSheet.addRow([
       functionType,
-      ...COMPLEXITY_LEVELS.map((level) => WEIGHT_TABLE[functionType][level])
+      ...COMPLEXITY_LEVELS.map((level) => weightTable[functionType][level])
     ])
   })
 
@@ -168,7 +186,7 @@ export function buildProjectWorkbook(project: ProjectDetail): ExcelJS.Workbook {
     { header: 'FTR/RET バケット1 最大値', key: 'ref1', width: 18 }
   ]
   difficultySheet.getRow(1).font = { bold: true }
-  DIFFICULTY_RULES.forEach((rule) => {
+  difficultyRules.forEach((rule) => {
     difficultySheet.addRow([
       rule.functionType,
       rule.det[0],

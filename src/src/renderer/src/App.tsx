@@ -118,6 +118,7 @@ function App(): React.JSX.Element {
     projectForm,
     entryForm,
     projectProductivityForm,
+    defaultProductivityForm,
     studioSettings,
     isLoading,
     isBusy,
@@ -214,7 +215,14 @@ function App(): React.JSX.Element {
             </div>
           ) : (
             <div className={styles.settingsContainer}>
-              <SettingsPanel settings={studioSettings} />
+              <SettingsPanel
+                settings={studioSettings}
+                defaultProductivity={defaultProductivityForm.productivity}
+                canSubmitDefaultProductivity={defaultProductivityForm.canSubmit}
+                isBusy={isBusy}
+                onDefaultProductivityChange={defaultProductivityForm.updateValue}
+                onSubmitDefaultProductivity={actions.updateDefaultProductivity}
+              />
             </div>
           )}
         </div>

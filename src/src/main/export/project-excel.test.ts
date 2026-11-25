@@ -215,6 +215,91 @@ describe('Excelエクスポート', () => {
       })
     })
 
+    // specification.md「Excel 出力」: 同梱する値はアプリが算出に使う値と同じもの
+    describe('設定に保持された難易度ルールと重みを同梱する', () => {
+      const customSettings = {
+        difficultyRules: [
+          { functionType: 'EI', det: [3, 9], reference: [0, 1] },
+          { functionType: 'EO', det: [7, 21], reference: [2, 4] }
+        ] as const,
+        weightTable: {
+          ...WEIGHT_TABLE,
+          EI: { Low: 30, Average: 40, High: 60 }
+        }
+      }
+
+      it('Weights シートに設定の重みを書き出す', () => {
+        const sheet = buildProjectWorkbook(makeProject([]), customSettings).getWorksheet('Weights')!
+
+        expect(sheet.getRow(2).values).toEqual([undefined, 'EI', 30, 40, 60])
+        expect(sheet.getRow(3).values).toEqual([undefined, 'EO', 4, 5, 7])
+      })
+
+      it('Difficulty Rules シートに設定の難易度ルールを書き出し、欠けた Function Type は標準値で補う', () => {
+        const sheet = buildProjectWorkbook(makeProject([]), customSettings).getWorksheet(
+          'Difficulty Rules'
+        )!
+
+        expect(sheet.getRow(2).values).toEqual([undefined, 'EI', 3, 9, 0, 1])
+        expect(sheet.getRow(3).values).toEqual([undefined, 'EO', 7, 21, 2, 4])
+        expect(sheet.getRow(4).values).toEqual([undefined, 'EQ', 6, 20, 1, 3])
+        expect(sheet.getRow(5).values).toEqual([undefined, 'ILF', 20, 51, 1, 5])
+        expect(sheet.getRow(6).values).toEqual([undefined, 'EIF', 20, 51, 1, 5])
+      })
+
+      it('重みの欠けた項目は標準値で補い、空のセルを作らない', () => {
+        const sheet = buildProjectWorkbook(makeProject([]), {
+          weightTable: { EI: { Low: 30 } } as never
+        }).getWorksheet('Weights')!
+
+        expect(sheet.getRow(2).values).toEqual([undefined, 'EI', 30, 4, 6])
+        expect(sheet.getRow(6).values).toEqual([undefined, 'EIF', 5, 7, 10])
+      })
+
+      it('重みセルの結果値は設定の重みになる', () => {
+        const entry = makeEntry('1', 'EI', 5, 2, { difficulty: 'High', functionPoints: 60 })
+        const sheet = buildProjectWorkbook(makeProject([entry]), customSettings).getWorksheet(
+          'Function Entries'
+        )!
+
+        expect(formulaCell(sheet.getCell('G2').value).result).toBe(60)
+      })
+    })
+
+    describe('備考', () => {
+      it('Function Entries の K 列に見出し「備考」と機能の備考を書き出す', () => {
+        const sheet = buildProjectWorkbook(
+          makeProject([
+            makeEntry('1', 'EI', 5, 2, { note: '画面A-01 の登録処理' }),
+            makeEntry('2', 'EO', 5, 2)
+          ])
+        ).getWorksheet('Function Entries')!
+
+        expect(sheet.getCell('K1').value).toBe('備考')
+        expect(sheet.getCell('K2').value).toBe('画面A-01 の登録処理')
+        expect(sheet.getCell('K3').value).toBe('')
+      })
+
+      it('備考を足しても A〜J 列の見出しは変わらない', () => {
+        const sheet = buildProjectWorkbook(makeProject([])).getWorksheet('Function Entries')!
+
+        expect(sheet.getRow(1).values).toEqual([
+          undefined,
+          'No.',
+          '機能名',
+          '機能種別',
+          'DET',
+          'FTR/RET',
+          '難易度',
+          '重み',
+          'FP',
+          '生産性（人日/FP）',
+          '工数（人日）',
+          '備考'
+        ])
+      })
+    })
+
     it('機能が0件でもシート構成と合計数式を維持する', () => {
       const workbook = buildProjectWorkbook(makeProject([]))
       const summary = workbook.getWorksheet('Summary')!

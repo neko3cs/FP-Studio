@@ -27,6 +27,11 @@ export interface StudioRepository {
   deleteFunctionEntry: (entryId: string) => void
   getSettings: () => StudioSettings
   setDefaultProductivity: (value: number) => void
+  /**
+   * work の中の書き込みを1つのトランザクションにまとめる。work が例外を投げたらすべて取り消す。
+   * 同期 API のため、work の中で非同期処理を挟まない。
+   */
+  transaction: <T>(work: () => T) => T
   close: () => void
 }
 
@@ -129,6 +134,7 @@ export function createStudioRepository(databaseContext: DatabaseContext): Studio
       const normalized = String(value)
       upsertSetting(db, 'defaultProductivity', normalized)
     },
+    transaction: (work) => native.transaction(work)(),
     close: () => native.close()
   }
 }

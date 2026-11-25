@@ -58,6 +58,55 @@ describe('StudioRepository の設定解析', () => {
       )
     })
 
+    // specification.md「設定の読み取りと復旧」の表
+    describe('JSON としては正しいが型が違う設定', () => {
+      it.each(['{"functionType":"EI"}', '"text"', '42', 'null'])(
+        '難易度ルールが配列でない（%s）ときは IFPUG 標準の難易度ルールを使う',
+        (value) => {
+          expect(buildStudioSettings([{ key: 'difficultyRules', value }]).difficultyRules).toEqual(
+            DEFAULT_DIFFICULTY_RULES
+          )
+        }
+      )
+
+      it.each(['[1,2,3]', '"text"', '42', 'null'])(
+        '重みがオブジェクトでない（%s）ときは IFPUG 標準の重みを使う',
+        (value) => {
+          expect(buildStudioSettings([{ key: 'weightTable', value }]).weightTable).toEqual(
+            DEFAULT_WEIGHT_TABLE
+          )
+        }
+      )
+
+      it.each([
+        ['DET 境界が数値でない', { functionType: 'EI', det: ['a', 16], reference: [1, 2] }],
+        ['DET 境界が2つの組でない', { functionType: 'EI', det: [5], reference: [1, 2] }],
+        ['DET 境界が配列でない', { functionType: 'EI', det: 5, reference: [1, 2] }],
+        ['参照数境界が数値でない', { functionType: 'EI', det: [5, 16], reference: [1, null] }],
+        ['参照数境界が無い', { functionType: 'EI', det: [5, 16] }]
+      ])('%s Function Type だけ IFPUG 標準値を使う', (_label, brokenRule) => {
+        const customEo = { functionType: 'EO', det: [7, 21], reference: [2, 4] }
+
+        const settings = buildStudioSettings([
+          { key: 'difficultyRules', value: JSON.stringify([brokenRule, customEo]) }
+        ])
+
+        expect(settings.difficultyRules).toEqual([
+          DEFAULT_DIFFICULTY_RULES[0],
+          customEo,
+          ...DEFAULT_DIFFICULTY_RULES.slice(2)
+        ])
+      })
+
+      it('難易度ルールの要素がオブジェクトでないときは無視して標準値で補う', () => {
+        const settings = buildStudioSettings([
+          { key: 'difficultyRules', value: JSON.stringify([null, 'EI', 3]) }
+        ])
+
+        expect(settings.difficultyRules).toEqual(DEFAULT_DIFFICULTY_RULES)
+      })
+    })
+
     it('複数の設定キーをまとめて解釈する', () => {
       const settings = buildStudioSettings([
         { key: 'defaultProductivity', value: '1.75' },

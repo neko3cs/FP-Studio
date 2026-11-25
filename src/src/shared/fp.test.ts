@@ -9,6 +9,8 @@ import {
   buildProjectTotals,
   getReferenceLabel,
   isDataFunction,
+  resolveDifficultyRules,
+  resolveWeightTable,
   type FunctionEntry
 } from './fp'
 
@@ -330,6 +332,52 @@ describe('機能の分類', () => {
 
     it('トランザクション機能（EQ）の参照ラベルは FTR である', () => {
       expect(getReferenceLabel('EQ')).toBe('FTR')
+    })
+  })
+})
+
+// specification.md「難易度と FP の決定規則」「設定の読み取りと復旧」
+describe('算出に使う難易度ルールと重みの決定', () => {
+  describe('難易度ルール', () => {
+    it('一覧でないときは IFPUG 標準の難易度ルールを使う', () => {
+      expect(resolveDifficultyRules(undefined)).toEqual(DEFAULT_DIFFICULTY_RULES)
+      expect(resolveDifficultyRules({ functionType: 'EI' })).toEqual(DEFAULT_DIFFICULTY_RULES)
+    })
+
+    it('オブジェクトでない要素（null・文字列・数値）は無視して標準値で補う', () => {
+      expect(resolveDifficultyRules([null, 'EI', 3])).toEqual(DEFAULT_DIFFICULTY_RULES)
+    })
+
+    it('未知の Function Type のルールは無視する', () => {
+      expect(
+        resolveDifficultyRules([{ functionType: 'XX', det: [1, 2], reference: [1, 2] }])
+      ).toEqual(DEFAULT_DIFFICULTY_RULES)
+    })
+
+    it('設定にある Function Type は設定の値を、無い Function Type は標準値を、Function Type の順に返す', () => {
+      const customEq = { functionType: 'EQ', det: [7, 21], reference: [2, 4] }
+
+      expect(resolveDifficultyRules([customEq])).toEqual([
+        DEFAULT_DIFFICULTY_RULES[0],
+        DEFAULT_DIFFICULTY_RULES[1],
+        customEq,
+        DEFAULT_DIFFICULTY_RULES[3],
+        DEFAULT_DIFFICULTY_RULES[4]
+      ])
+    })
+  })
+
+  describe('重み', () => {
+    it('表でないときは IFPUG 標準の重みを使う', () => {
+      expect(resolveWeightTable(undefined)).toEqual(DEFAULT_WEIGHT_TABLE)
+      expect(resolveWeightTable(null)).toEqual(DEFAULT_WEIGHT_TABLE)
+      expect(resolveWeightTable([1, 2, 3])).toEqual(DEFAULT_WEIGHT_TABLE)
+    })
+
+    it('数値でない項目と、行がオブジェクトでない Function Type だけ標準値を使う', () => {
+      expect(
+        resolveWeightTable({ EI: { Low: 30, Average: '40', High: null }, EO: 5, EQ: null })
+      ).toEqual({ ...DEFAULT_WEIGHT_TABLE, EI: { Low: 30, Average: 4, High: 6 } })
     })
   })
 })
