@@ -435,7 +435,7 @@ erDiagram
 
 ### 可搬性
 
-- `electron-builder` で Windows / macOS / Linux 向けにビルドする
+- `electron-builder` で要件対象の Windows / macOS 向けにビルドする。Linux（AppImage）向けビルドは要件外のベストエフォート配布として提供する
 - パス操作は `path.join()` を徹底する
 
 ### データ保全
