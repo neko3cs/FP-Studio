@@ -2,12 +2,13 @@
 
 ## Key References
 
-- `docs/architecture.md` — **Read this every session.** Technology choices, responsibilities and dependency direction, invariants, persistence and migration, verification policy and key risks, and the ADR log (append-only).
+- `docs/architecture.md` — **Read this every session.** Technology choices, responsibilities and dependency direction, invariants, persistence and migration, and the ADR log (append-only).
+- `docs/tests.md` — **Read this every session.** Test scope, test levels and tools, test environments and external boundaries, quality gates and CI design, exit criteria, and key risks and verification limits.
 - `docs/requirements.md` / `docs/specification.md` — Why the product exists and what it must do. Read when a change touches scope, business rules, screens, state transitions, the data model, or input/output formats.
 - There is no detailed-design document (ADR-010). When you need the current module/class structure or call flow, read the code and explain it from there; do not add such snapshots to the docs.
 - `src/README.md` — Developer-facing build and test instructions.
 
-When a document and the code disagree, **the code is authoritative** — fix the document. Exception: if the difference is behavior that an open issue is tracking for implementation (design decided ahead of the code, e.g. #18), **the document is authoritative** — leave the document as is and implement from it.
+When a design document and the code disagree, **the document is authoritative** — treat the mismatch as a code defect (users verify behavior against the docs, not the code).
 
 ## What This Project Is (and Is Not)
 
@@ -38,7 +39,7 @@ Use the `test-code` skill for the full post-implementation quality gate.
 
 ### GitHub Actions
 
-CI design is documented in `docs/architecture.md` under 「CI での実行」.
+CI design is documented in `docs/tests.md` under 「CI での実行」.
 
 - CI's format check covers workflow files too: `pnpm exec prettier --check . ../.github` (fix with `--write`). Plain `pnpm format` does not touch `../.github`.
 - `gh workflow run` only works once the workflow exists on the default branch.
@@ -65,7 +66,7 @@ Releases are run by `.github/workflows/release.yml` on a `release-*` tag push. R
 
 - **Commit/push requires explicit user permission.**
 - Follow the TDD cycle enforced by the `test-as-tdd` skill. Conventions for layering, naming, error handling, and test naming are in `docs/architecture.md` (共通規約).
-- Keep the docs in sync when behavior changes: `docs/specification.md` for business rules, screens, states, data, input/output, or messages; `docs/architecture.md` for responsibilities, constraints, persistence, verification policy, or a new decision (append a new ADR — never edit an existing one).
+- Keep the docs in sync when behavior changes: `docs/specification.md` for business rules, screens, states, data, input/output, or messages; `docs/architecture.md` for responsibilities, constraints, persistence, or a new architecture decision (append a new ADR for architecture decisions only — never edit an existing one, and do not add ADRs for test-plan or process changes); `docs/tests.md` for test scope, environments, quality gates, CI, exit criteria, or key risks.
 
 ## Gotchas
 
@@ -73,6 +74,6 @@ Things that have actually cost time. Not derivable from the code.
 
 - `pnpm install`/`pnpm update` can fail with `ERR_PNPM_PUBLIC_HOIST_PATTERN_DIFF` (stale `node_modules` vs. `.npmrc`'s `shamefully-hoist=true`) or hang waiting on a TTY prompt to remove `node_modules`. Run `CI=true pnpm install` to resolve non-interactively.
 - After bumping the `electron` devDependency, the first `pnpm test:e2e` run can time out on the first spec while Playwright downloads the new Electron binary mid-run. Re-run the suite once the binary is cached — this is not a real regression.
-- `better-sqlite3` is built for Electron, so its ABI does not match the Node that runs vitest. The DB-query layer cannot be unit-tested; only Playwright e2e exercises real SQLite. Rationale and the workaround (`repositories/settings-parsing.ts`) are in `docs/architecture.md`.
+- `better-sqlite3` is built for Electron, so its ABI does not match the Node that runs vitest. The DB-query layer cannot be unit-tested; only Playwright e2e exercises real SQLite. Rationale (ADR-003) and the workaround (`repositories/settings-parsing.ts`) are in `docs/architecture.md`; test scope and limits are in `docs/tests.md`.
 - `DifficultyRule.det` buckets with strict `<`, `reference` with `<=`. They look symmetric and are not. The Excel formula must mirror this exactly — the exact-string assertions in `src/src/main/export/project-excel.test.ts` guard it; keep them when touching either side.
 - Unit tests run on Windows in CI. Build expected file paths with `path.join()`, never a hardcoded `/`-separated literal (see `app-paths.test.ts`).
