@@ -67,7 +67,7 @@
 | 環境 | 役割 |
 | :--- | :--- |
 | ローカル | 実装中の検証。`src/` で各コマンドを実行する。E2E はフルビルドしてから実行する |
-| CI（[Tests ワークフロー](../.github/workflows/test.yml)） | PR・`main` への push・手動実行・Release ワークフローからの呼び出しで、品質ゲートのすべてを実行する（[CI での実行](#ci-での実行)） |
+| CI（[Tests ワークフロー](../.github/workflows/test.yml)） | PR・`main` への push・手動実行（`workflow_dispatch`）・Release ワークフローからの呼び出し（`workflow_call`）で、品質ゲートのすべてを実行する（[CI での実行](#ci-での実行)） |
 | リリース（[Release ワークフロー](../.github/workflows/release.yml)） | Tests ワークフロー全体を通したうえで、OS ごとにパッケージングして draft に上げる。公開前の確認は人が行う（[AGENTS.md](../AGENTS.md#releasing)） |
 
 - **単体・コンポーネントテストは jsdom 上で動かす。** 実際の Electron ウィンドウは使わない
@@ -119,7 +119,7 @@
 - **失敗を調査できる成果物を残す。** カバレッジ、変異レポート、E2E 結果（失敗時の trace を含む）は失敗時もアップロードを試み、7日間保存する
 - **実行権限を限定する。** 標準の GitHub ホストランナーを使用し、権限は `contents: read`、外部 Actions はコミット SHA に固定する
 
-ジョブ構成、ランナー、バージョン、タイムアウト、保存期間の正はワークフローと共通セットアップ Action とする。
+実行コマンドと結果の確認方法は [AGENTS.md](../AGENTS.md#commands) を参照する。ジョブ構成、ランナー、バージョン、タイムアウト、保存期間の正はワークフローと共通セットアップ Action とする。
 
 ## 終了条件
 
